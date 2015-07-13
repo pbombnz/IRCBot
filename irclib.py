@@ -119,8 +119,7 @@ class Bot:
         console_print("CONNECT", "Socket Created.")
 
         for i in range(1, CONNECTION_ATTEMPTS + 1):
-            console_print("CONNECT",
-                          "Attempting to connect...[ Attempt " + str(i) + " of " + str(CONNECTION_ATTEMPTS) + " ]")
+            console_print("CONNECT", "Attempting to connect...[ Attempt " + str(i) + " of " + str(CONNECTION_ATTEMPTS) + " ]")
             try:
                 self.ircConnection.connect((self.server, self.port))
                 if self.ssl:
