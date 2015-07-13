@@ -1,7 +1,5 @@
 import kobra
 
-x = 2
-x = 3
 server = "irc.sacnr.com"
 port = 6697
 ssl = True
