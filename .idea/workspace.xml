@@ -1,8 +1,9 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <project version="4">
   <component name="ChangeListManager">
-    <list default="true" id="f988a2ab-1c72-4412-a06e-f36ffc203f46" name="Default" comment="removed all kobra references">
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/modules/eightBall.py" afterPath="$PROJECT_DIR$/modules/eightBall.py" />
+    <list default="true" id="f988a2ab-1c72-4412-a06e-f36ffc203f46" name="Default" comment="modified eightBall module for better programming style">
+      <change type="MOVED" beforePath="C:\Users\Prashant\PycharmProjects\IRCBot\kobra.py" afterPath="$PROJECT_DIR$/irclib.py" />
+      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/bot.py" afterPath="$PROJECT_DIR$/bot.py" />
       <change type="MODIFICATION" beforePath="$PROJECT_DIR$/.idea/workspace.xml" afterPath="$PROJECT_DIR$/.idea/workspace.xml" />
     </list>
     <ignored path="Cupcake.iws" />
@@ -24,34 +25,24 @@
   </component>
   <component name="FileEditorManager">
     <leaf>
-      <file leaf-file-name="bot.py" pinned="false" current-in-tab="false">
+      <file leaf-file-name="bot.py" pinned="false" current-in-tab="true">
         <entry file="file://$PROJECT_DIR$/bot.py">
           <provider selected="true" editor-type-id="text-editor">
-            <state vertical-scroll-proportion="0.0">
+            <state vertical-scroll-proportion="0.03448276">
               <caret line="1" column="0" selection-start-line="1" selection-start-column="0" selection-end-line="1" selection-end-column="0" />
               <folding />
             </state>
           </provider>
         </entry>
       </file>
-      <file leaf-file-name="kobra.py" pinned="false" current-in-tab="false">
-        <entry file="file://$PROJECT_DIR$/kobra.py">
+      <file leaf-file-name="irclib.py" pinned="false" current-in-tab="false">
+        <entry file="file://$PROJECT_DIR$/irclib.py">
           <provider selected="true" editor-type-id="text-editor">
             <state vertical-scroll-proportion="0.0">
               <caret line="570" column="0" selection-start-line="570" selection-start-column="0" selection-end-line="570" selection-end-column="0" />
               <folding>
                 <element signature="e#29#42#0" expanded="true" />
               </folding>
-            </state>
-          </provider>
-        </entry>
-      </file>
-      <file leaf-file-name="eightBall.py" pinned="false" current-in-tab="true">
-        <entry file="file://$PROJECT_DIR$/modules/eightBall.py">
-          <provider selected="true" editor-type-id="text-editor">
-            <state vertical-scroll-proportion="0.62068963">
-              <caret line="18" column="0" selection-start-line="18" selection-start-column="0" selection-end-line="18" selection-end-column="0" />
-              <folding />
             </state>
           </provider>
         </entry>
@@ -308,7 +299,7 @@
       <option name="ADD_CONTENT_ROOTS" value="true" />
       <option name="ADD_SOURCE_ROOTS" value="true" />
       <module name="Cupcake" />
-      <option name="SCRIPT_NAME" value="$PROJECT_DIR$/kobra.py" />
+      <option name="SCRIPT_NAME" value="C:\Users\Prashant\PycharmProjects\IRCBot\irclib.py" />
       <option name="PARAMETERS" value="" />
       <option name="SHOW_COMMAND_LINE" value="false" />
       <method />
@@ -499,7 +490,13 @@
       <option name="project" value="LOCAL" />
       <updated>1436791498121</updated>
     </task>
-    <option name="localTasksCounter" value="7" />
+    <task id="LOCAL-00007" summary="modified eightBall module for better programming style">
+      <created>1436792080933</created>
+      <option name="number" value="00007" />
+      <option name="project" value="LOCAL" />
+      <updated>1436792080933</updated>
+    </task>
+    <option name="localTasksCounter" value="8" />
     <servers />
   </component>
   <component name="ToolWindowManager">
@@ -544,7 +541,8 @@
     <MESSAGE value="initial commit" />
     <MESSAGE value="constructor changes" />
     <MESSAGE value="removed all kobra references" />
-    <option name="LAST_COMMIT_MESSAGE" value="removed all kobra references" />
+    <MESSAGE value="modified eightBall module for better programming style" />
+    <option name="LAST_COMMIT_MESSAGE" value="modified eightBall module for better programming style" />
   </component>
   <component name="XDebuggerManager">
     <breakpoint-manager>
@@ -574,7 +572,7 @@
         </state>
       </provider>
     </entry>
-    <entry file="file://$PROJECT_DIR$/kobra.py">
+    <entry file="file://$PROJECT_DIR$/irclib.py">
       <provider selected="true" editor-type-id="text-editor">
         <state vertical-scroll-proportion="0.0">
           <caret line="109" column="0" selection-start-line="109" selection-start-column="0" selection-end-line="109" selection-end-column="0" />
@@ -619,7 +617,7 @@
         </state>
       </provider>
     </entry>
-    <entry file="file://$PROJECT_DIR$/kobra.py">
+    <entry file="file://$PROJECT_DIR$/irclib.py">
       <provider selected="true" editor-type-id="text-editor">
         <state vertical-scroll-proportion="0.0">
           <caret line="83" column="42" selection-start-line="83" selection-start-column="36" selection-end-line="83" selection-end-column="42" />
@@ -664,7 +662,7 @@
         </state>
       </provider>
     </entry>
-    <entry file="file://$PROJECT_DIR$/kobra.py">
+    <entry file="file://$PROJECT_DIR$/irclib.py">
       <provider selected="true" editor-type-id="text-editor">
         <state vertical-scroll-proportion="0.0">
           <caret line="83" column="42" selection-start-line="83" selection-start-column="36" selection-end-line="83" selection-end-column="42" />
@@ -674,7 +672,7 @@
         </state>
       </provider>
     </entry>
-    <entry file="file://$PROJECT_DIR$/kobra.py">
+    <entry file="file://$PROJECT_DIR$/irclib.py">
       <provider selected="true" editor-type-id="text-editor">
         <state vertical-scroll-proportion="0.0">
           <caret line="96" column="16" selection-start-line="96" selection-start-column="16" selection-end-line="96" selection-end-column="16" />
@@ -759,13 +757,6 @@
       <provider selected="true" editor-type-id="text-editor">
         <state vertical-scroll-proportion="0.0">
           <caret line="14" column="0" selection-start-line="14" selection-start-column="0" selection-end-line="14" selection-end-column="0" />
-        </state>
-      </provider>
-    </entry>
-    <entry file="file://$PROJECT_DIR$/modules/actions.py">
-      <provider selected="true" editor-type-id="text-editor">
-        <state vertical-scroll-proportion="0.0">
-          <caret line="0" column="63" selection-start-line="0" selection-start-column="63" selection-end-line="0" selection-end-column="63" />
         </state>
       </provider>
     </entry>
@@ -881,14 +872,6 @@
         </state>
       </provider>
     </entry>
-    <entry file="file://$PROJECT_DIR$/bot.py">
-      <provider selected="true" editor-type-id="text-editor">
-        <state vertical-scroll-proportion="0.0">
-          <caret line="1" column="0" selection-start-line="1" selection-start-column="0" selection-end-line="1" selection-end-column="0" />
-          <folding />
-        </state>
-      </provider>
-    </entry>
     <entry file="file://$PROJECT_DIR$/modules/admin.py">
       <provider selected="true" editor-type-id="text-editor">
         <state vertical-scroll-proportion="6.448276">
@@ -897,7 +880,23 @@
         </state>
       </provider>
     </entry>
-    <entry file="file://$PROJECT_DIR$/kobra.py">
+    <entry file="file://$PROJECT_DIR$/modules/actions.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state vertical-scroll-proportion="-0.2413793">
+          <caret line="0" column="63" selection-start-line="0" selection-start-column="63" selection-end-line="0" selection-end-column="63" />
+          <folding />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/modules/eightBall.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state vertical-scroll-proportion="0.62068963">
+          <caret line="18" column="0" selection-start-line="18" selection-start-column="0" selection-end-line="18" selection-end-column="0" />
+          <folding />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/irclib.py">
       <provider selected="true" editor-type-id="text-editor">
         <state vertical-scroll-proportion="0.0">
           <caret line="570" column="0" selection-start-line="570" selection-start-column="0" selection-end-line="570" selection-end-column="0" />
@@ -907,10 +906,10 @@
         </state>
       </provider>
     </entry>
-    <entry file="file://$PROJECT_DIR$/modules/eightBall.py">
+    <entry file="file://$PROJECT_DIR$/bot.py">
       <provider selected="true" editor-type-id="text-editor">
-        <state vertical-scroll-proportion="0.62068963">
-          <caret line="18" column="0" selection-start-line="18" selection-start-column="0" selection-end-line="18" selection-end-column="0" />
+        <state vertical-scroll-proportion="0.03448276">
+          <caret line="1" column="0" selection-start-line="1" selection-start-column="0" selection-end-line="1" selection-end-column="0" />
           <folding />
         </state>
       </provider>
