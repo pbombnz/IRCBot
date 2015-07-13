@@ -80,8 +80,8 @@ class Bot:
 
     reconnect_on_improper_disconnect = True
 
-    def __init__(self, server: str, port: int=6667, is_ssl: bool=False, nick_name: str="Kobra", user_name: str="Kobra",
-                 real_name: str="Kobra - IRC Python Framework (By Prashant B)", password: str=None):
+    def __init__(self, server: str, port: int, is_ssl: bool, nick_name: str, user_name: str,
+                 real_name: str, password: str=None):
         self.server = server
         self.port = port
         self.ssl = is_ssl
