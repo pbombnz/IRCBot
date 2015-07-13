@@ -10,7 +10,7 @@ import importlib
 import importlib.util
 from collections import OrderedDict
 
-# Importing kobra modules
+# Importing bot modules
 import modules
 import resources
 
@@ -99,12 +99,10 @@ class Bot:
         self.unloaded_modules = set()
 
         console_print("INIT", "==============================================================")
-        console_print("INIT", "Kobra - Python IRC Bot Framework (By Prashant B.)")
+        console_print("INIT", "Python IRC Bot Framework - By Prashant Bhikhu (PBombNZ) [2015]")
         console_print("INIT", "==============================================================")
         console_print("CONFIG", "SERVER: {0} PORT: {1} SSL: {2}".format(str(server), str(port), str(ssl)))
-        console_print("CONFIG",
-                      "NICKNAME: \"{0}\" USERNAME: \"{1}\" REALNAME: \"{2}\"".format(str(nick_name), str(user_name),
-                                                                                     str(real_name)))
+        console_print("CONFIG", "NICKNAME: \"{0}\" USERNAME: \"{1}\" REALNAME: \"{2}\"".format(str(nick_name), str(user_name), str(real_name)))
         console_print("CONFIG", "PASSWORD: {0}".format(str(password)))
         console_print("INIT", "")
 
@@ -650,12 +648,12 @@ class Bot:
 
     def quit(self, message: str=None, error_message: str=None, reconnect_on_error: bool=True):
         if not message and not error_message:
-            self.send_raw_message("QUIT : The Kobra Framework - By Prashant B. (https://github.com/pbombnz)")
+            self.send_raw_message("QUIT : Python IRC Framework - By Prashant B. (https://github.com/pbombnz)")
             console_print("QUIT", "Bot has disconnected successfully.")
 
         elif message and not error_message:
             self.send_raw_message(
-                "QUIT :" + str(message) + " - The Kobra Framework - By Prashant B. (https://github.com/pbombnz)")
+                "QUIT :" + str(message) + " - Python IRC Framework - By Prashant B. (https://github.com/pbombnz)")
             console_print("QUIT", "Bot has disconnected successfully.")
 
         elif not message and error_message:
@@ -664,7 +662,7 @@ class Bot:
         elif message and error_message:
             console_print("QUIT", "Bot has disconnected unexpectedly due to " + str(error_message))
             self.send_raw_message(
-                "QUIT :" + str(message) + " - The Kobra Framework - By Prashant B. (https://github.com/pbombnz)")
+                "QUIT :" + str(message) + " - Python IRC Framework - By Prashant B. (https://github.com/pbombnz)")
 
         self.ircConnection.close()
         self.is_connect = False
