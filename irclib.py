@@ -651,8 +651,7 @@ class Bot:
             console_print("QUIT", "Bot has disconnected successfully.")
 
         elif message and not error_message:
-            self.send_raw_message(
-                "QUIT :" + str(message) + " - Python IRC Framework - By Prashant B. (https://github.com/pbombnz)")
+            self.send_raw_message("QUIT :" + str(message) + " - Python IRC Framework - By Prashant B. (https://github.com/pbombnz)")
             console_print("QUIT", "Bot has disconnected successfully.")
 
         elif not message and error_message:
@@ -660,8 +659,7 @@ class Bot:
 
         elif message and error_message:
             console_print("QUIT", "Bot has disconnected unexpectedly due to " + str(error_message))
-            self.send_raw_message(
-                "QUIT :" + str(message) + " - Python IRC Framework - By Prashant B. (https://github.com/pbombnz)")
+            self.send_raw_message("QUIT :" + str(message) + " - Python IRC Framework - By Prashant B. (https://github.com/pbombnz)")
 
         self.ircConnection.close()
         self.is_connect = False
