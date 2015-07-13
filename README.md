@@ -9,7 +9,7 @@ Please note, this framework was made from one of my older frameworks that is rea
   * Commenting and Documentation
 #Prerequisites
   * Python 3.4.0+
-#Setup
+# Setup
   1. Install Python 3.4.0 (or higher)
   2. Download the files
   2. Run bot.py
