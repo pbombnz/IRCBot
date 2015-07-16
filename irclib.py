@@ -16,7 +16,7 @@ import resources
 
 # static variables initialised
 PING_TIMEOUT = 300.0  # the amount of time (in secs) to disconnect a socket that is inactive or improperly disconnected
-CONNECTION_ATTEMPTS = 5  # the number of attempts to connect on failure
+CONNECTION_ATTEMPTS = 100  # the number of attempts to connect on failure
 
 # Regular expressions of common IRC events
 IRC_EVENT_PATTERN = {'RAW-NUMERIC': ":(.*)\s(\d\d\d)\s(.*)\s:(.*)",
@@ -71,17 +71,33 @@ class _CaseInsensitiveDict(dict):
 
 # noinspection PyUnresolvedReferences
 # noinspection PyMethodMayBeStatic
-class Bot:
+class Bot(object):
     """
-        This is a class wear all
+        This class handles all the logic of the IRC Bot. This includes handling incoming and outgoing messages.
+        Parsing data recieved from the server so the user of the library doesn't have to implement certain activities
+        themselves such as collecting channel data.
     """
+
+    # Initialising variables for channel information
     channel_info = _CaseInsensitiveDict()
     channel_info_names_list_index = 0
 
+    # Initialising other variables
     reconnect_on_improper_disconnect = True
 
-    def __init__(self, server: str, port: int, is_ssl: bool, nick_name: str, user_name: str,
-                 real_name: str, password: str=None):
+    def __init__(self, server: str, port: int, is_ssl: bool, nick_name: str, user_name: str, real_name: str, password: str=None):
+        """
+            Initialise the Bot object and defines bot parameters
+
+            :param server: The server address of the IRC Server you wish to connect to
+            :param port: The port of the server address of the IRC Server you wish to connect to
+            :param is_ssl: Whether you would like to connect with SSL or not
+            :param nick_name: The nickname used for the bot. This is the displayed to users when the bot is communicating
+            :param user_name: The user name used for the bot. This is generally only see in the bot's host mask
+            :param real_name: The real name used for the bot. This can be any string which is displayed in the WHOIS command
+            :param password: Optional. Insert a password if the user requires identification
+            :return object: An object of the Bot
+        """
         self.server = server
         self.port = port
         self.ssl = is_ssl
@@ -93,11 +109,13 @@ class Bot:
         self.ircConnection = None
         self.is_connect = False
 
+        # Declaring variables that will hold the module names
         self.loaded_modules = set()
-        self.loading_modules = set()
-        self.unloading_modules = set()
+        self.loading_modules = set()    # Note, that the loading and unloading sets are constructed due to the fact we can not
+        self.unloading_modules = set()  # edit the loaded_modules set when being iterated.
         self.unloaded_modules = set()
 
+        # Displays information about the bot in console
         console_print("INIT", "==============================================================")
         console_print("INIT", "Python IRC Bot Framework - By Prashant Bhikhu (PBombNZ) [2015]")
         console_print("INIT", "==============================================================")
@@ -106,6 +124,7 @@ class Bot:
         console_print("CONFIG", "PASSWORD: {0}".format(str(password)))
         console_print("INIT", "")
 
+        # Adds all IRC modules' names to the loaded_modules set meaning that all modules are loaded on execution
         for module in sys.modules:
             module_name = sys.modules[module].__name__
 
@@ -114,25 +133,37 @@ class Bot:
                 console_print("MODULE-LOAD", "loaded " + str(module_name) + ".")
 
     def connect(self):
+        """
+            Creates a socket connection to the specified server and port and sends an initial messages
+            that send information about the client to the server.
+        """
+        # Creates the socket and set an appropriate timeout
         self.ircConnection = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         self.ircConnection.settimeout(PING_TIMEOUT)
         console_print("CONNECT", "Socket Created.")
 
+        # Loop until we are connected
         for i in range(1, CONNECTION_ATTEMPTS + 1):
             console_print("CONNECT", "Attempting to connect...[ Attempt " + str(i) + " of " + str(CONNECTION_ATTEMPTS) + " ]")
             try:
+                # Connects to server
                 self.ircConnection.connect((self.server, self.port))
+                # if we are told that the client connects with SSL, then we wrap the current socket with SSL in order
+                # to make it SSL
                 if self.ssl:
                     self.ircConnection = ssl.wrap_socket(self.ircConnection)
                 console_print("CONNECT", "Connected Successfully.")
                 break
             except IOError:
+                # when we have reached the number of number of attempted connection, we raise an error indicating there is
+                #  a problem otherwise continue attempting to connect
                 if i == CONNECTION_ATTEMPTS:
                     raise IRCError("Cannot resolve server. Please check if the server and port parameters are correct.")
                 else:
                     console_print("CONNECT", "Connection attempt failed.")
-                    time.sleep(3)
+                    time.sleep(3)  # Just stop a few seconds so the connection attempts do go fast and it doesnt act like a mini DDoS attack
 
+        # Sending all initial messages to the server
         self.ircConnection.send(
             ('USER ' + str(self.user_name) + ' host servname : ' + str(self.real_name) + '\r\n').encode())
         self.ircConnection.send(('NICK ' + str(self.nick_name) + '\r\n').encode())
@@ -140,7 +171,7 @@ class Bot:
         if self.password is None:
             self.ircConnection.send(('NS IDENTIFY ' + str(self.password) + '\r\n').encode())
             self.ircConnection.send('HS ON\r\n'.encode())
-
+        # once, we have connected, we execute the on_connected method and tell the bot that the connect is active
         self.is_connect = True
         self.on_connected()
 
@@ -596,19 +627,48 @@ class Bot:
             self.unloading_modules.clear()
 
     def send_raw_message(self, message):
+        """
+            Sends a message to the server without any sort of IRC string formatting
+
+            :param message: A Message to the server with IRC string formatting inorder for it to be understood by the server.
+        """
         self.ircConnection.send(bytes(str(message) + '\r\n', 'UTF-8'))
 
-    def send_private_message(self, receiver, message):
-        self.send_raw_message('PRIVMSG ' + str(receiver) + ' :' + str(message))
+    def send_private_message(self, recipient, message):
+        """
+            Sends a message to a recipient via private message. This is the standard way of messaging recipients in
+            either a channel or to a person.
 
-    def send_notice_message(self, receiver, message):
-        self.send_raw_message('NOTICE ' + str(receiver) + ' :' + str(message))
+            :param recipient: The person or channel you are going to send the message to.
+            :param message:
+        """
+        self.send_raw_message('PRIVMSG ' + str(recipient) + ' :' + str(message))
 
-    def send_ctcp_message(self, receiver, ctcp, message=None):
+    def send_notice_message(self, recipient, message):
+        """
+            Sends a message to a recipient via notice message. This type of way of messaging recipients is often used
+            when you need to get the recipient's attention as generally it alerts the client's IRC client.
+            Not commonly used as it can be annoying. Please note that some channels do not permit the use of notice
+            messages.
+
+            :param recipient: The person or channel you are going to send the message to.
+            :param message:
+        """
+        self.send_raw_message('NOTICE ' + str(recipient) + ' :' + str(message))
+
+    def send_ctcp_message(self, recipient, ctcp, message=None):
+        """
+            Sends a CTCP message to a recipient so we can recieve information about the recipient without asking them.
+
+            :param recipient: The person or channel you are going to send the CTCP message to.
+            :param ctcp: The type of CTCP reply your requesting
+            :param message: Optional. Specify a message if its required by the ctcp type
+        """
+        # Only send a CTCP message with the message argument if the user specified it
         if message:
-            self.send_private_message(str(receiver), '\001' + str(ctcp) + ' ' + str(message) + '\001')
+            self.send_private_message(str(recipient), '\001' + str(ctcp) + ' ' + str(message) + '\001')
         else:
-            self.send_private_message(str(receiver), '\001' + str(ctcp) + '\001')
+            self.send_private_message(str(recipient), '\001' + str(ctcp) + '\001')
 
     def change_nick_name(self, new_nick_name: str):
         console_print("BOT-NICK-CHANGE", str(self.nick_name) + " is now known as " + str(new_nick_name))
@@ -673,9 +733,6 @@ class Bot:
             input("Press Enter to close console...")
             exit()
 
-    def get_channel_info(self):
-        return self.channel_info
-
     def reload_module(self, module_name: str):
         if module_name.lower() == "resources":
             try:
@@ -716,11 +773,25 @@ class Bot:
             return False
 
     def reload_all_modules(self):
+        """
+            Reloads all IRC Modules by reloading the 'modules' module which will result in all individual modules
+            being reloaded.
+
+            It's also useful when you want to import a new module into the bot without restarting.
+            Simply add a new import line into the modules' folder's __init__.py and use this method and the new
+            module will be loaded (if there was no compiler errors present)
+
+            :return: bool. True, if all modules were reloaded successfully, otherwise false.
+        """
         try:
-            importlib.reload(modules)
+            importlib.reload(modules)  # Reloading modules
+            # clearing all module sets (except loaded) because all modules are reloaded anyways there is not going to be an unloaded module
             self.loading_modules.clear()
             self.unloading_modules.clear()
             self.unloaded_modules.clear()
+            # Iterate through all system modules, and add all IRC modules to the loading set (to be loaded)
+            # Note, we cannot add straight to the 'loaded_modules' set because it might violate the fact you cannot edit
+            # a data structure that is being iterated through.
             for module in sys.modules:
                 module_name = sys.modules[module].__name__
 
@@ -728,25 +799,55 @@ class Bot:
                     self.loading_modules.add(module_name)
                     console_print("MODULE-RELOAD", "Reloaded " + str(module_name) + ".")
 
+                # Check and execute code within the modules if it needs to perform actions on initialisation
                 if hasattr(sys.modules[module_name], 'on_connected'):
                     if callable(getattr(sys.modules[module_name], 'on_connected')):
                         sys.modules[module_name].on_connected(self)
+            # Return true to indicate that all modules were loaded successfully
             return True
         except IOError:
+            # Indicates compiler errors in one of the modules, which also means all none of the other modules can be loaded
             console_print("MODULE-RELOAD", "A specific module is causing all other modules to not be loaded.")
+            # Return False to indicate that all modules were not loaded successfully
             return False
 
+    def get_channel_info(self):
+        """
+            :return: Returns the channel information dictionary. keys are channel names, which also stores a nested dictionary
+                     of that channel's specific information
+        """
+        return self.channel_info
+
     def get_resources(self):
+        """
+            :return: returns a 'module' object named resources.
+        """
         return resources
 
     def set_reconnect_on_improper_disconnect(self, reconnect: bool):
+        """
+            Toggles whether or not to reconnect automatically when a improper discconection occurs
+
+            :param reconnect: True, if you want to reconnect, otherwise false.
+        """
         self.reconnect_on_improper_disconnect = reconnect
 
     def get_loaded_modules(self):
+        """
+            :return: A frozenset (immutable set) of the loaded modules. You cannot modify the set.
+        """
         return frozenset(self.loaded_modules)
 
     def get_unloaded_modules(self):
+        """
+            :return: A frozenset (immutable set) of the unloaded modules. You cannot modify the set.
+        """
         return frozenset(self.unloaded_modules)
 
     def add_attributes(self, **kw):
+        """
+            Allows for variables to be dynamically added into the instance on runtime. This is handy for modules, that
+            have variables that need to be accessed by other modules globally.
+        :param kw: keyword arguments used to store dynamic variables within the Bot instance
+        """
         self.__dict__.update(kw)
