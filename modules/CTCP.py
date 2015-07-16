@@ -1,6 +1,6 @@
 import time
 
-CTCP_VERSION_REPLY = "The Kobra Framework - By Prashant B. (https://github.com/pbombnz)"
+CTCP_VERSION_REPLY = "Python IRC Bot Framework - By Prashant B. (https://github.com/pbombnz)"
 
 
 def on_ctcp(irc, user_mask, user, target, ctcp_command, ctcp_params):
