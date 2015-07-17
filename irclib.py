@@ -45,14 +45,6 @@ def console_print(type_str: str, message: str):
     print("[" + type_str + "] " + message)
 
 
-class IRCError(Exception):
-    """An IRC exception"""
-
-
-class BotError(Exception):
-    """An IRC exception"""
-
-
 class _CaseInsensitiveDict(dict):
     """
         An Internal class that overrides certain methods of a standard dictionary
@@ -69,8 +61,26 @@ class _CaseInsensitiveDict(dict):
         return dict.__setitem__(self, key.lower(), value)
 
 
-# noinspection PyUnresolvedReferences
-# noinspection PyMethodMayBeStatic
+class _BotModulesManager(object):
+    def __init__(self):
+        # Declaring variables that will hold the module names
+        self.loaded_modules = set()
+        self.loading_modules = set()    # Note, that the loading and unloading sets are constructed due to the fact we can not
+        self.unloading_modules = set()  # edit the loaded_modules set when being iterated.
+        self.unloaded_modules = set()
+
+        # Adds all IRC modules' names to the loaded_modules set meaning that all modules are loaded on execution
+        for module in sys.modules:
+            module_name = sys.modules[module].__name__
+
+            if module_name.startswith("modules."):
+                self.loaded_modules.add(module_name)
+                console_print("MODULE-LOAD", "loaded " + str(module_name) + ".")
+
+    def call_modules
+
+#s noinspection PyUnresolvedReferences
+#s noinspection PyMethodMayBeStatic
 class Bot(object):
     """
         This class handles all the logic of the IRC Bot. This includes handling incoming and outgoing messages.
@@ -110,10 +120,10 @@ class Bot(object):
         self.is_connect = False
 
         # Declaring variables that will hold the module names
-        self.loaded_modules = set()
-        self.loading_modules = set()    # Note, that the loading and unloading sets are constructed due to the fact we can not
-        self.unloading_modules = set()  # edit the loaded_modules set when being iterated.
-        self.unloaded_modules = set()
+        # self.loaded_modules = set()
+        # self.loading_modules = set()    # Note, that the loading and unloading sets are constructed due to the fact we can not
+        # self.unloading_modules = set()  # edit the loaded_modules set when being iterated.
+        # self.unloaded_modules = set()
 
         # Displays information about the bot in console
         console_print("INIT", "==============================================================")
@@ -125,12 +135,12 @@ class Bot(object):
         console_print("INIT", "")
 
         # Adds all IRC modules' names to the loaded_modules set meaning that all modules are loaded on execution
-        for module in sys.modules:
-            module_name = sys.modules[module].__name__
-
-            if module_name.startswith("modules."):
-                self.loaded_modules.add(module_name)
-                console_print("MODULE-LOAD", "loaded " + str(module_name) + ".")
+        # for module in sys.modules:
+        #     module_name = sys.modules[module].__name__
+        #
+        #     if module_name.startswith("modules."):
+        #         self.loaded_modules.add(module_name)
+        #         console_print("MODULE-LOAD", "loaded " + str(module_name) + ".")
 
     def connect(self):
         """
@@ -158,7 +168,7 @@ class Bot(object):
                 # when we have reached the number of number of attempted connection, we raise an error indicating there is
                 #  a problem otherwise continue attempting to connect
                 if i == CONNECTION_ATTEMPTS:
-                    raise IRCError("Cannot resolve server. Please check if the server and port parameters are correct.")
+                    raise IOError("Cannot resolve server. Please check if the server and port parameters are correct.")
                 else:
                     console_print("CONNECT", "Connection attempt failed.")
                     time.sleep(3)  # Just stop a few seconds so the connection attempts do go fast and it doesnt act like a mini DDoS attack
@@ -181,35 +191,27 @@ class Bot(object):
                 if callable(getattr(sys.modules[module_name], 'on_connected')):
                     sys.modules[module_name].on_connected(self)
 
-        threading.Thread(target=self.receive_raw_data).start()
+        threading.Thread(target=self._receive_incoming_data).start()
         threading.Thread(target=self.on_constant_module_call).start()
 
     def on_constant_module_call(self):
         while self.is_connect:
             time.sleep(1)
             for module_name in self.loaded_modules:
-                if hasattr(sys.modules[module_name], 'on_constant_call') and callable(
-                        getattr(sys.modules[module_name], 'on_constant_call')):
+                if hasattr(sys.modules[module_name], 'on_constant_call') and callable(getattr(sys.modules[module_name], 'on_constant_call')):
                     try:
                         sys.modules[module_name].on_constant_call(self)
                     except Exception as error:
-                        console_print("MODULE-ERROR",
-                                      "MODULE: " + str(module_name) + " | INPUT: Constant Call | ERROR MESSAGE: " + str(
-                                          error))
+                        console_print("MODULE-ERROR", "MODULE: " + str(module_name) + " | INPUT: Constant Call | ERROR MESSAGE: " + str(error))
                         self.unload_module(module_name)
 
-    # noinspection PyUnboundLocalVariable
-    def receive_raw_data(self):
+    def _receive_incoming_data(self):
         while self.is_connect:
             try:
                 raw_data = self.ircConnection.recv(1024)
             except IOError:
                 self.quit(error_message="socket timeout")
                 break
-
-            # if not raw_data:
-            #     self.quit(error_message="socket timeout")
-            #     break
 
             raw_data = raw_data.decode('utf-8').split('\r\n')
             for data in raw_data:
