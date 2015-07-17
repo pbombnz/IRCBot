@@ -61,26 +61,6 @@ class _CaseInsensitiveDict(dict):
         return dict.__setitem__(self, key.lower(), value)
 
 
-class _BotModulesManager(object):
-    def __init__(self):
-        # Declaring variables that will hold the module names
-        self.loaded_modules = set()
-        self.loading_modules = set()    # Note, that the loading and unloading sets are constructed due to the fact we can not
-        self.unloading_modules = set()  # edit the loaded_modules set when being iterated.
-        self.unloaded_modules = set()
-
-        # Adds all IRC modules' names to the loaded_modules set meaning that all modules are loaded on execution
-        for module in sys.modules:
-            module_name = sys.modules[module].__name__
-
-            if module_name.startswith("modules."):
-                self.loaded_modules.add(module_name)
-                console_print("MODULE-LOAD", "loaded " + str(module_name) + ".")
-
-    def call_modules
-
-#s noinspection PyUnresolvedReferences
-#s noinspection PyMethodMayBeStatic
 class Bot(object):
     """
         This class handles all the logic of the IRC Bot. This includes handling incoming and outgoing messages.
@@ -120,10 +100,10 @@ class Bot(object):
         self.is_connect = False
 
         # Declaring variables that will hold the module names
-        # self.loaded_modules = set()
-        # self.loading_modules = set()    # Note, that the loading and unloading sets are constructed due to the fact we can not
-        # self.unloading_modules = set()  # edit the loaded_modules set when being iterated.
-        # self.unloaded_modules = set()
+        self.loaded_modules = set()
+        self.loading_modules = set()    # Note, that the loading and unloading sets are constructed due to the fact we can not
+        self.unloading_modules = set()  # edit the loaded_modules set when being iterated.
+        self.unloaded_modules = set()
 
         # Displays information about the bot in console
         console_print("INIT", "==============================================================")
@@ -135,12 +115,12 @@ class Bot(object):
         console_print("INIT", "")
 
         # Adds all IRC modules' names to the loaded_modules set meaning that all modules are loaded on execution
-        # for module in sys.modules:
-        #     module_name = sys.modules[module].__name__
-        #
-        #     if module_name.startswith("modules."):
-        #         self.loaded_modules.add(module_name)
-        #         console_print("MODULE-LOAD", "loaded " + str(module_name) + ".")
+        for module in sys.modules:
+            module_name = sys.modules[module].__name__
+
+            if module_name.startswith("modules."):
+                self.loaded_modules.add(module_name)
+                console_print("MODULE-LOAD", "loaded " + str(module_name) + ".")
 
     def connect(self):
         """
@@ -187,9 +167,9 @@ class Bot(object):
 
     def on_connected(self):
         for module_name in self.loaded_modules:
-            if hasattr(sys.modules[module_name], 'on_connected'):
-                if callable(getattr(sys.modules[module_name], 'on_connected')):
-                    sys.modules[module_name].on_connected(self)
+            if hasattr(sys.modules[module_name], 'on_init'):
+                if callable(getattr(sys.modules[module_name], 'on_init')):
+                    sys.modules[module_name].on_init(self)
 
         threading.Thread(target=self._receive_incoming_data).start()
         threading.Thread(target=self.on_constant_module_call).start()
@@ -617,9 +597,9 @@ class Bot(object):
             for module_name in self.loading_modules:
                 self.unloaded_modules.discard(module_name)
                 self.loaded_modules.add(module_name)
-                if hasattr(sys.modules[module_name], 'on_connected'):
-                    if callable(getattr(sys.modules[module_name], 'on_connected')):
-                        sys.modules[module_name].on_connected(self)
+                if hasattr(sys.modules[module_name], 'on_init'):
+                    if callable(getattr(sys.modules[module_name], 'on_init')):
+                        sys.modules[module_name].on_init(self)
             self.loading_modules.clear()
 
         if len(self.unloading_modules) > 0:
@@ -679,7 +659,15 @@ class Bot(object):
         self.host_mask[0] = new_nick_name
 
     def join(self, channel, key=None):
+        """
+            Joins a channel
+
+        :param channel: The name of the channel
+        :param key: Optional. If the channel has a key to get in, specify it here.
+        :return:
+        """
         console_print("BOT-JOIN", "Joined " + str(channel))
+        # If a key is specified, then we add the pass key parameter to the join message otherwise we simply join normally
         if key:
             self.send_raw_message("JOIN " + str(channel) + " " + str(key))
         else:
@@ -752,9 +740,9 @@ class Bot(object):
                     if module_name in self.unloaded_modules:
                         self.loading_modules.add(module_name)
 
-                    if hasattr(sys.modules[module_name], 'on_connected'):
-                        if callable(getattr(sys.modules[module_name], 'on_connected')):
-                            sys.modules[module_name].on_connected(self)
+                    if hasattr(sys.modules[module_name], 'on_init'):
+                        if callable(getattr(sys.modules[module_name], 'on_init')):
+                            sys.modules[module_name].on_init(self)
 
                     console_print("MODULE-RELOAD", "Reloaded " + str(module_name) + ".")
                     return True
@@ -767,12 +755,19 @@ class Bot(object):
         return False
 
     def unload_module(self, module_name: str):
+        """
+            Unloads the specified module from execution of IRC events
+
+            :param module_name: The full name of the module you would like to unload
+            :return: Returns True, if unloading was sucessful otherwise false.
+        """
+
         if module_name in self.loaded_modules:
             self.unloading_modules.add(module_name)
             console_print("MODULE-UNLOAD", "Unloaded " + str(module_name) + ".")
             return True
         else:
-            return False
+            return False  # The module is already (or is going to be) unloaded.
 
     def reload_all_modules(self):
         """
@@ -802,9 +797,9 @@ class Bot(object):
                     console_print("MODULE-RELOAD", "Reloaded " + str(module_name) + ".")
 
                 # Check and execute code within the modules if it needs to perform actions on initialisation
-                if hasattr(sys.modules[module_name], 'on_connected'):
-                    if callable(getattr(sys.modules[module_name], 'on_connected')):
-                        sys.modules[module_name].on_connected(self)
+                if hasattr(sys.modules[module_name], 'on_init'):
+                    if callable(getattr(sys.modules[module_name], 'on_init')):
+                        sys.modules[module_name].on_init(self)
             # Return true to indicate that all modules were loaded successfully
             return True
         except IOError:

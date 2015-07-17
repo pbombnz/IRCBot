@@ -34,7 +34,7 @@ def load_user_database(irc):
     file.close()
 
 
-def on_connected(irc):
+def on_init(irc):
     if os.path.isfile("./resources/users.dat"):
         irc.add_attributes(user_info=dict())
         load_user_database(irc)

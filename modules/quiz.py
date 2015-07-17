@@ -47,8 +47,7 @@ def load_quiz_database():
     file.close()
 
 
-def on_connected(irc):
-    print("HI")
+def on_init(irc):
     if os.path.isfile("./resources/quiz.dat"):
         load_quiz_database()
     else:
