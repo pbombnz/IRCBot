@@ -724,6 +724,13 @@ class Bot(object):
             exit()
 
     def reload_module(self, module_name: str):
+        """
+
+            :param module_name: The full-name of the module to be reloaded
+            :return: Returns True if the IRC module was reloaded successfully, otherwise return False.
+        """
+
+
         if module_name.lower() == "resources":
             try:
                 importlib.reload(sys.modules["resources"])
@@ -751,7 +758,6 @@ class Bot(object):
                     return False
             else:
                 return False
-
         return False
 
     def unload_module(self, module_name: str):
