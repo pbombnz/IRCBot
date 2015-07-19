@@ -3,8 +3,24 @@ from urllib.parse import urlparse
 import re
 import json
 import socket
+import configparser
+import os
 
-IPLOOKUP_API_KEY = "5ab70bddbc2e23b0f67247bab906b6bf0570f4a3007f7654383a6e000fb4066e"
+
+IPLOOKUP_API_KEY = str()  # API key can go directly here. Code below is so my API key doesnt show on github
+
+
+def on_init(irc):
+    global IPLOOKUP_API_KEY
+
+    config = configparser.ConfigParser()
+    if os.path.exists("../resources/api-keys.ini"):
+        config.read("../resources/api-keys.ini")
+        if 'IPLookup' in config:
+            IPLOOKUP_API_KEY = config['IPLookup']['APIkey']
+            return
+
+    irc.unload_modules("modules.weather")
 
 
 def tinyurl_shorten(url):

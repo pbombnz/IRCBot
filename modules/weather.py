@@ -3,8 +3,23 @@ import urllib.request
 import urllib.parse
 import json
 import re
+import configparser
+import os
 
-WEATHER_UNDERGROUND_API_KEY = "ecf579a205be1ff9"
+
+WEATHER_UNDERGROUND_API_KEY = str()  # API key can go directly here. Code below is so my API key doesnt show on github
+
+def on_init(irc):
+    global WEATHER_UNDERGROUND_API_KEY
+
+    config = configparser.ConfigParser()
+    if os.path.exists("../resources/api-keys.ini"):
+        config.read("../resources/api-keys.ini")
+        if 'WeatherUnderground' in config:
+            WEATHER_UNDERGROUND_API_KEY = config['WeatherUnderground']['APIkey']
+            return
+
+    irc.unload_modules("modules.weather")
 
 TINYURL = "http://tinyurl.com/api-create.php?url="
 
