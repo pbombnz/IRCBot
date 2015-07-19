@@ -72,9 +72,6 @@ class Bot(object):
     channel_info = _CaseInsensitiveDict()
     channel_info_names_list_index = 0
 
-    # Initialising other variables
-    reconnect_on_improper_disconnect = True
-
     def __init__(self, server: str, port: int, is_ssl: bool, nick_name: str, user_name: str, real_name: str, password: str=None):
         """
             Initialise the Bot object and defines bot parameters
@@ -653,8 +650,16 @@ class Bot(object):
             self.send_private_message(str(recipient), '\001' + str(ctcp) + '\001')
 
     def change_nick_name(self, new_nick_name: str):
+        """
+            Changes the nickname of the bot
+
+            :param new_nick_name: The new nickname you would like to set for the Bot
+            :return:
+        """
         console_print("BOT-NICK-CHANGE", str(self.nick_name) + " is now known as " + str(new_nick_name))
+        # Send a message to the server indicating that you have changed your name.
         self.send_raw_message("NICK " + str(new_nick_name))
+        # Changed the fields within the Bot instance
         self.nick_name = new_nick_name
         self.host_mask[0] = new_nick_name
 
@@ -662,18 +667,24 @@ class Bot(object):
         """
             Joins a channel
 
-        :param channel: The name of the channel
-        :param key: Optional. If the channel has a key to get in, specify it here.
-        :return:
+            :param channel: The name of the channel
+            :param key: Optional. If the channel has a key to get in, specify it here.
+            :return:
         """
         console_print("BOT-JOIN", "Joined " + str(channel))
-        # If a key is specified, then we add the pass key parameter to the join message otherwise we simply join normally
         if key:
             self.send_raw_message("JOIN " + str(channel) + " " + str(key))
         else:
             self.send_raw_message("JOIN " + str(channel))
 
     def part(self, channel, message=None):
+        """
+            Parts a channel.
+
+            :param channel: The channel you wish to part.
+            :param message: Optional. The message you wish to part with
+            :return:
+        """
         console_print("BOT-PART", "Parted " + str(channel))
         if message is None:
             self.send_raw_message("PART " + str(channel))
@@ -681,42 +692,72 @@ class Bot(object):
             self.send_raw_message("PART " + str(channel) + " " + str(message))
 
     def cycle(self, channel, key=None):
+        """
+            Cylces (Parts and rejoins) a channel.
+
+            :param channel: The channel you wish to cycle through.
+            :param key: Optional. If the channel has a key to get in, specify it here.
+            :return:
+        """
         self.part(channel, "Cycling...")
         self.join(channel, key)
 
     def identify(self, password=None):
+        """
+            Sends a message to server to authorise and identify the user
+
+            :param password: Optional. If this argument is present, it tells the Bot to identify using this password
+             rather than the one specified within the fields
+            :return:
+        """
         if password:
             self.send_raw_message("NS IDENTIFY " + str(password))
-            self.send_raw_message("HS ON")
+            self.send_raw_message("HS ON")  # enables your fake vhost if present
             return True
         if self.password:
             self.send_raw_message("NS IDENTIFY " + str(self.password))
-            self.send_raw_message("HS ON")
+            self.send_raw_message("HS ON")  # enables your fake vhost if presen
             return True
         return False
 
-    def quit(self, message: str=None, error_message: str=None, reconnect_on_error: bool=True):
-        if not message and not error_message:
+    def quit(self, quit_message: str=None, error_message: str=None, reconnect_on_error: bool=True):
+        """
+            Closes the IRC connection and performs additonal activities based on whether it the socketed ended
+            expected or unexpectedly
+
+            :param quit_message: Optional. The message you would like to show on quit. Only needed if the quit was expected.
+            :param error_message: Optional. This message is describes the error in console, if an error is present. Only
+                                  needed if the quit was as unexpected.
+            :param reconnect_on_error: Optional. Set to True by default. Determines whether you want to reconnect or not
+                                       if the quit was as unexpected.
+            :return:
+        """
+
+        # Depending on the combination of arugments present, we can determine whether to send a QUIT command to the server
+        # (if the connection is still active or not) and print a suitable message to console.
+        if not quit_message and not error_message:
             self.send_raw_message("QUIT : Python IRC Framework - By Prashant B. (https://github.com/pbombnz)")
             console_print("QUIT", "Bot has disconnected successfully.")
 
-        elif message and not error_message:
-            self.send_raw_message("QUIT :" + str(message) + " - Python IRC Framework - By Prashant B. (https://github.com/pbombnz)")
+        elif quit_message and not error_message:
+            self.send_raw_message("QUIT :" + str(quit_message) + " - Python IRC Framework - By Prashant B. (https://github.com/pbombnz)")
             console_print("QUIT", "Bot has disconnected successfully.")
 
-        elif not message and error_message:
+        elif not quit_message and error_message:
             console_print("QUIT", "Bot has disconnected unexpectedly due to " + str(error_message))
 
-        elif message and error_message:
+        elif quit_message and error_message:
             console_print("QUIT", "Bot has disconnected unexpectedly due to " + str(error_message))
-            self.send_raw_message("QUIT :" + str(message) + " - Python IRC Framework - By Prashant B. (https://github.com/pbombnz)")
+            self.send_raw_message("QUIT :" + str(quit_message) + " - Python IRC Framework - By Prashant B. (https://github.com/pbombnz)")
 
+        # Clean up variables on quit (regardless if it was an expected quit or not)
         self.ircConnection.close()
         self.is_connect = False
         self.channel_info.clear()
         self.channel_info_names_list_index = 0
 
-        if error_message and self.reconnect_on_improper_disconnect and reconnect_on_error:
+        # Reconnect if an error was present, otherwise exit the program
+        if error_message and reconnect_on_error:
             console_print("QUIT", "Attempting to reestablish lost connection.")
             self.connect()
         else:
@@ -725,13 +766,16 @@ class Bot(object):
 
     def reload_module(self, module_name: str):
         """
+            Reloads an individual module that was previously loaded.
 
             :param module_name: The full-name of the module to be reloaded
             :return: Returns True if the IRC module was reloaded successfully, otherwise return False.
         """
 
-
+        # Firstly, we check if if the module being reloaded is the 'resources' module or an IRC module as they are
+        # the only two types of valid inputs when reloading.
         if module_name.lower() == "resources":
+            # attempt to reload the resources modules and return True or false depending if was successful or not, respectively.
             try:
                 importlib.reload(sys.modules["resources"])
                 console_print("MODULE-RELOAD", "Reloaded " + str(module_name) + ".")
@@ -741,23 +785,32 @@ class Bot(object):
                 return False
 
         if module_name.startswith("modules."):
+            # Checks if the module's name is even a IRC module
             if module_name in self.loaded_modules or module_name in self.unloaded_modules:
+                # Knowing its an IRC module, we have to attempt to reload the module
                 try:
                     importlib.reload(sys.modules[module_name])
+                    # If it was previously an unloaded module, we have to add it to the loaded modules set eventually inorder
+                    # for it to be callable.
                     if module_name in self.unloaded_modules:
                         self.loading_modules.add(module_name)
 
+                    # The module is not callable and sucessfully reloaded at this point. Now we have to call the on_init
+                    # method within the module if present
                     if hasattr(sys.modules[module_name], 'on_init'):
                         if callable(getattr(sys.modules[module_name], 'on_init')):
                             sys.modules[module_name].on_init(self)
 
+                    # Print a success message and return True for the success on reloading the module
                     console_print("MODULE-RELOAD", "Reloaded " + str(module_name) + ".")
                     return True
                 except IOError:
+                    # A compiler error occured and the module could not be loaded, hence we return False
                     console_print("MODULE-RELOAD", "Unable to load " + str(module_name) + ".")
                     return False
-            else:
-                return False
+
+        # if the module's name was not the 'resources' module or an IRC module (or simply doesnt exist), then
+        # there is no significance in reloading it hence why we return False
         return False
 
     def unload_module(self, module_name: str):
@@ -826,14 +879,6 @@ class Bot(object):
             :return: returns a 'module' object named resources.
         """
         return resources
-
-    def set_reconnect_on_improper_disconnect(self, reconnect: bool):
-        """
-            Toggles whether or not to reconnect automatically when a improper discconection occurs
-
-            :param reconnect: True, if you want to reconnect, otherwise false.
-        """
-        self.reconnect_on_improper_disconnect = reconnect
 
     def get_loaded_modules(self):
         """
