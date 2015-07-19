@@ -14,8 +14,8 @@ def on_init(irc):
     global IPLOOKUP_API_KEY
 
     config = configparser.ConfigParser()
-    if os.path.exists("../resources/api-keys.ini"):
-        config.read("../resources/api-keys.ini")
+    if os.path.exists("./resources/api-keys.ini"):
+        config.read("./resources/api-keys.ini")
         if 'IPLookup' in config:
             IPLOOKUP_API_KEY = config['IPLookup']['APIkey']
             return

@@ -13,8 +13,8 @@ def on_init(irc):
     global WEATHER_UNDERGROUND_API_KEY
 
     config = configparser.ConfigParser()
-    if os.path.exists("../resources/api-keys.ini"):
-        config.read("../resources/api-keys.ini")
+    if os.path.exists("./resources/api-keys.ini"):
+        config.read("./resources/api-keys.ini")
         if 'WeatherUnderground' in config:
             WEATHER_UNDERGROUND_API_KEY = config['WeatherUnderground']['APIkey']
             return
