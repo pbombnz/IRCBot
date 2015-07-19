@@ -8,6 +8,7 @@ WEATHER_UNDERGROUND_API_KEY = "ecf579a205be1ff9"
 
 TINYURL = "http://tinyurl.com/api-create.php?url="
 
+
 def tinyurl_shorten(url):
     if not re.match("^(https*)://.+", url, re.IGNORECASE):
         url = 'http://' + str(url)

@@ -2,8 +2,7 @@
 <project version="4">
   <component name="ChangeListManager">
     <list default="true" id="f988a2ab-1c72-4412-a06e-f36ffc203f46" name="Default" comment="">
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/irclib.py" afterPath="$PROJECT_DIR$/irclib.py" />
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/modules/userDatabase.py" afterPath="$PROJECT_DIR$/modules/userDatabase.py" />
+      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/modules/weather.py" afterPath="$PROJECT_DIR$/modules/weather.py" />
       <change type="MODIFICATION" beforePath="$PROJECT_DIR$/.idea/workspace.xml" afterPath="$PROJECT_DIR$/.idea/workspace.xml" />
     </list>
     <ignored path="Cupcake.iws" />
@@ -35,14 +34,24 @@
           </provider>
         </entry>
       </file>
-      <file leaf-file-name="irclib.py" pinned="false" current-in-tab="true">
+      <file leaf-file-name="irclib.py" pinned="false" current-in-tab="false">
         <entry file="file://$PROJECT_DIR$/irclib.py">
           <provider selected="true" editor-type-id="text-editor">
-            <state vertical-scroll-proportion="24.626776">
+            <state vertical-scroll-proportion="0.0">
               <caret line="752" column="83" selection-start-line="752" selection-start-column="83" selection-end-line="752" selection-end-column="83" />
               <folding>
                 <element signature="e#29#42#0" expanded="true" />
               </folding>
+            </state>
+          </provider>
+        </entry>
+      </file>
+      <file leaf-file-name="weather.py" pinned="false" current-in-tab="true">
+        <entry file="file://$PROJECT_DIR$/modules/weather.py">
+          <provider selected="true" editor-type-id="text-editor">
+            <state vertical-scroll-proportion="0.44827586">
+              <caret line="16" column="61" selection-start-line="16" selection-start-column="61" selection-end-line="16" selection-end-column="61" />
+              <folding />
             </state>
           </provider>
         </entry>
@@ -111,7 +120,6 @@
         <option value="$PROJECT_DIR$/modules/basicMod.py" />
         <option value="$PROJECT_DIR$/modules/tinyURL.py" />
         <option value="$PROJECT_DIR$/modules/logging.py" />
-        <option value="$PROJECT_DIR$/modules/weather.py" />
         <option value="$PROJECT_DIR$/modules/setLocation.py" />
         <option value="$PROJECT_DIR$/modules/urlTitle.py" />
         <option value="$PROJECT_DIR$/modules/cryptic.py" />
@@ -137,6 +145,7 @@
         <option value="$PROJECT_DIR$/modules/userDatabase.py" />
         <option value="$PROJECT_DIR$/modules/quiz.py" />
         <option value="$PROJECT_DIR$/irclib.py" />
+        <option value="$PROJECT_DIR$/modules/weather.py" />
       </list>
     </option>
   </component>
@@ -590,14 +599,20 @@
       <option name="project" value="LOCAL" />
       <updated>1437200939577</updated>
     </task>
-    <option name="localTasksCounter" value="17" />
+    <task id="LOCAL-00017" summary="Added comments">
+      <created>1437274418687</created>
+      <option name="number" value="00017" />
+      <option name="project" value="LOCAL" />
+      <updated>1437274418687</updated>
+    </task>
+    <option name="localTasksCounter" value="18" />
     <servers />
   </component>
   <component name="ToolWindowManager">
     <frame x="-8" y="-8" width="1456" height="886" extended-state="6" />
-    <editor active="true" />
+    <editor active="false" />
     <layout>
-      <window_info id="Project" active="false" anchor="left" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="true" weight="0.18888889" sideWeight="0.5" order="0" side_tool="false" content_ui="combo" />
+      <window_info id="Project" active="true" anchor="left" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="true" weight="0.18888889" sideWeight="0.5" order="0" side_tool="false" content_ui="combo" />
       <window_info id="TODO" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" weight="0.33" sideWeight="0.5" order="6" side_tool="false" content_ui="tabs" />
       <window_info id="Messages" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" weight="0.33" sideWeight="0.5" order="7" side_tool="false" content_ui="tabs" />
       <window_info id="Event Log" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="true" weight="0.32947233" sideWeight="0.5083333" order="7" side_tool="true" content_ui="tabs" />
@@ -900,13 +915,6 @@
         </state>
       </provider>
     </entry>
-    <entry file="file://$PROJECT_DIR$/modules/weather.py">
-      <provider selected="true" editor-type-id="text-editor">
-        <state vertical-scroll-proportion="1.7204117">
-          <caret line="62" column="107" selection-start-line="62" selection-start-column="107" selection-end-line="62" selection-end-column="107" />
-        </state>
-      </provider>
-    </entry>
     <entry file="file://$PROJECT_DIR$/modules/ipLookup.py">
       <provider selected="true" editor-type-id="text-editor">
         <state vertical-scroll-proportion="0.02915952">
@@ -1027,11 +1035,19 @@
     </entry>
     <entry file="file://$PROJECT_DIR$/irclib.py">
       <provider selected="true" editor-type-id="text-editor">
-        <state vertical-scroll-proportion="24.626776">
+        <state vertical-scroll-proportion="0.0">
           <caret line="752" column="83" selection-start-line="752" selection-start-column="83" selection-end-line="752" selection-end-column="83" />
           <folding>
             <element signature="e#29#42#0" expanded="true" />
           </folding>
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/modules/weather.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state vertical-scroll-proportion="0.44827586">
+          <caret line="16" column="61" selection-start-line="16" selection-start-column="61" selection-end-line="16" selection-end-column="61" />
+          <folding />
         </state>
       </provider>
     </entry>
