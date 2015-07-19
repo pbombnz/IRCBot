@@ -9,7 +9,7 @@ __pycache__/
 .idea/
 
 # Resource Config Files
-resources/*.cfg
+resources/*.ini
 
 # C extensions
 *.so
