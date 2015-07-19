@@ -19,7 +19,7 @@ def on_init(irc):
             WEATHER_UNDERGROUND_API_KEY = config['WeatherUnderground']['APIkey']
             return
 
-    irc.unload_modules("modules.weather")
+    irc.unload_module("modules.weather")
 
 TINYURL = "http://tinyurl.com/api-create.php?url="
 

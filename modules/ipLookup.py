@@ -20,7 +20,7 @@ def on_init(irc):
             IPLOOKUP_API_KEY = config['IPLookup']['APIkey']
             return
 
-    irc.unload_modules("modules.weather")
+    irc.unload_module("modules.ipLookup")
 
 
 def tinyurl_shorten(url):
