@@ -14,10 +14,6 @@ from collections import OrderedDict
 import modules
 import resources
 
-# static variables initialised
-PING_TIMEOUT = 300.0  # the amount of time (in secs) to disconnect a socket that is inactive or improperly disconnected
-CONNECTION_ATTEMPTS = 100  # the number of attempts to connect on failure
-
 # Regular expressions of common IRC events
 IRC_EVENT_PATTERN = {'RAW-NUMERIC': ":(.*)\s(\d\d\d)\s(.*)\s:(.*)",
                      'NICK-CHANGE': ":(.*)!(.*)@(.*)\sNICK\s:(.*)",
@@ -45,7 +41,7 @@ def console_print(type_str: str, message: str):
     print("[" + type_str + "] " + message)
 
 
-class _CaseInsensitiveDict(dict):
+class IRCDict(dict):
     """
         An Internal class that overrides certain methods of a standard dictionary
         object in order for the keys to be case insensitive.
@@ -61,7 +57,91 @@ class _CaseInsensitiveDict(dict):
         return dict.__setitem__(self, key.lower(), value)
 
 
-class Bot(object):
+class IRCModulesMangager(object):
+    def __init__(self):
+        # Declaring variables that will hold the module names
+        self.loaded_modules = set()
+        self.loading_modules = set()    # Note, that the loading and unloading sets are constructed due to the fact we can not
+        self.unloading_modules = set()  # edit the loaded_modules set when being iterated.
+        self.unloaded_modules = set()
+
+        for module in sys.modules:
+            module_name = sys.modules[module].__name__
+
+            if module_name.startswith("modules."):
+                self.loaded_modules.add(module_name)
+                console_print("MODULE-LOAD", "loaded " + str(module_name) + ".")
+
+
+    def initialise_all_modules(self):
+
+
+class IRCModule(object):
+    def __init__(self):
+        pass
+
+    def on_process_forever(self, irc):
+        pass
+
+    def on_raw_numeric(self, mask, numeric, message):
+        pass
+
+    def on_nick_change(self, user_mask, user_old_nick, user_new_nick):
+        pass
+
+    def on_action(self, user_mask, user_nick, channel, action):
+        pass
+
+    def on_channel_pm(self, user_mask, user_nick, channel, message):
+        pass
+
+    def on_ctcp(self, user_mask, user_nick, target, ctcp_command,ctcp_params):
+        pass
+
+    def on_user_pm(self, user_mask, user_nick, target, message):
+        pass
+
+    def on_kick(self, user_mask, user_nick, channel, target, message):
+        pass
+
+    def on_invite(self, user_mask, user_nick, target, channel):
+        pass
+
+    def on_join(self, user_mask, user_nick, channel):
+        pass
+
+    def on_part(self, user_mask, user_nick, channel, part_message):
+        pass
+
+    def on_quit(self, user_mask, user_nick, quit_message):
+        pass
+
+    def on_channel_notice(self, user_mask, user_nick, channel, message):
+        pass
+
+    def on_user_notice(self, user_mask, user_nick, target, message):
+        pass
+
+    def on_notice_auth(self, mask, message):
+        pass
+
+    def on_ping(self, ping_reply):
+        pass
+
+    def on_mode_user(self, user, target, mode_sting):
+        pass
+
+    def on_mode_channel_setbyuser(self, user_mask, user_nick, channel,mode_sting, mode_params):
+        pass
+
+    def on_mode_channel_setbyserv(self, serv_user, channel, mode_sting, mode_params):
+        pass
+
+    def on_error(self, error_message):
+        pass
+
+
+class IRCBot(object):
     """
         This class handles all the logic of the IRC Bot. This includes handling incoming and outgoing messages.
         Parsing data recieved from the server so the user of the library doesn't have to implement certain activities
@@ -69,7 +149,7 @@ class Bot(object):
     """
 
     # Initialising variables for channel information
-    channel_info = _CaseInsensitiveDict()
+    channel_info = IRCDict()
     channel_info_names_list_index = 0
 
     def __init__(self, server: str, port: int, is_ssl: bool, nick_name: str, user_name: str, real_name: str, password: str=None):
@@ -97,10 +177,10 @@ class Bot(object):
         self.is_connect = False
 
         # Declaring variables that will hold the module names
-        self.loaded_modules = set()
-        self.loading_modules = set()    # Note, that the loading and unloading sets are constructed due to the fact we can not
-        self.unloading_modules = set()  # edit the loaded_modules set when being iterated.
-        self.unloaded_modules = set()
+        # self.loaded_modules = set()
+        # self.loading_modules = set()    # Note, that the loading and unloading sets are constructed due to the fact we can not
+        # self.unloading_modules = set()  # edit the loaded_modules set when being iterated.
+        # self.unloaded_modules = set()
 
         # Displays information about the bot in console
         console_print("INIT", "==============================================================")
@@ -112,26 +192,26 @@ class Bot(object):
         console_print("INIT", "")
 
         # Adds all IRC modules' names to the loaded_modules set meaning that all modules are loaded on execution
-        for module in sys.modules:
-            module_name = sys.modules[module].__name__
+        # for module in sys.modules:
+        #     module_name = sys.modules[module].__name__
+        #
+        #     if module_name.startswith("modules."):
+        #         self.loaded_modules.add(module_name)
+        #         console_print("MODULE-LOAD", "loaded " + str(module_name) + ".")
 
-            if module_name.startswith("modules."):
-                self.loaded_modules.add(module_name)
-                console_print("MODULE-LOAD", "loaded " + str(module_name) + ".")
-
-    def connect(self):
+    def connect(self, timeout: int=300, connection_attempts: int=200):
         """
             Creates a socket connection to the specified server and port and sends an initial messages
             that send information about the client to the server.
         """
         # Creates the socket and set an appropriate timeout
         self.ircConnection = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-        self.ircConnection.settimeout(PING_TIMEOUT)
+        self.ircConnection.settimeout(timeout)
         console_print("CONNECT", "Socket Created.")
 
         # Loop until we are connected
-        for i in range(1, CONNECTION_ATTEMPTS + 1):
-            console_print("CONNECT", "Attempting to connect...[ Attempt " + str(i) + " of " + str(CONNECTION_ATTEMPTS) + " ]")
+        for i in range(1, connection_attempts + 1):
+            console_print("CONNECT", "Attempting to connect...[ Attempt " + str(i) + " of " + str(connection_attempts) + " ]")
             try:
                 # Connects to server
                 self.ircConnection.connect((self.server, self.port))
@@ -144,15 +224,14 @@ class Bot(object):
             except IOError:
                 # when we have reached the number of number of attempted connection, we raise an error indicating there is
                 #  a problem otherwise continue attempting to connect
-                if i == CONNECTION_ATTEMPTS:
+                if i == connection_attempts:
                     raise IOError("Cannot resolve server. Please check if the server and port parameters are correct.")
-                else:
-                    console_print("CONNECT", "Connection attempt failed.")
-                    time.sleep(3)  # Just stop a few seconds so the connection attempts do go fast and it doesnt act like a mini DDoS attack
+
+                console_print("CONNECT", "Connection attempt failed.")
+                time.sleep(3)  # Just stop a few seconds so the connection attempts don't go too fast and it doesnt act like a mini DDoS attack
 
         # Sending all initial messages to the server
-        self.ircConnection.send(
-            ('USER ' + str(self.user_name) + ' host servname : ' + str(self.real_name) + '\r\n').encode())
+        self.ircConnection.send(('USER ' + str(self.user_name) + ' host servname : ' + str(self.real_name) + '\r\n').encode())
         self.ircConnection.send(('NICK ' + str(self.nick_name) + '\r\n').encode())
 
         if self.password is None:
@@ -462,8 +541,7 @@ class Bot(object):
 
                     if hasattr(sys.modules[module_name], 'on_ctcp'):
                         if callable(getattr(sys.modules[module_name], 'on_ctcp')):
-                            sys.modules[module_name].on_ctcp(self, user_mask, user_nick, target, ctcp_command,
-                                                             ctcp_params)
+                            sys.modules[module_name].on_ctcp(self, user_mask, user_nick, target, ctcp_command,ctcp_params)
 
                 elif event_type == "USER-PM":
                     user_nick = parsed_data[0]
@@ -565,8 +643,7 @@ class Bot(object):
                     mode_params = parsed_data[5]
                     if hasattr(sys.modules[module_name], 'on_mode_channel_setbyuser'):
                         if callable(getattr(sys.modules[module_name], 'on_mode_channel_setbyuser')):
-                            sys.modules[module_name].on_mode_channel_setbyuser(self, user_mask, user_nick, channel,
-                                                                               mode_sting, mode_params)
+                            sys.modules[module_name].on_mode_channel_setbyuser(self, user_mask, user_nick, channel, mode_sting, mode_params)
 
                 elif event_type == "MODE-CHANNEL-SETBYSERV":
                     serv_user = parsed_data[0]
@@ -575,8 +652,7 @@ class Bot(object):
                     mode_params = parsed_data[3]
                     if hasattr(sys.modules[module_name], 'on_mode_channel_setbyserv'):
                         if callable(getattr(sys.modules[module_name], 'on_mode_channel_setbyserv')):
-                            sys.modules[module_name].on_mode_channel_setbyserv(self, serv_user, channel,
-                                                                               mode_sting, mode_params)
+                            sys.modules[module_name].on_mode_channel_setbyserv(self, serv_user, channel, mode_sting, mode_params)
 
                 elif event_type == "ERROR":
                     error_message = parsed_data[0]
@@ -896,6 +972,7 @@ class Bot(object):
         """
             Allows for variables to be dynamically added into the instance on runtime. This is handy for modules, that
             have variables that need to be accessed by other modules globally.
-        :param kw: keyword arguments used to store dynamic variables within the Bot instance
+
+            :param kw: keyword arguments used to store dynamic variables within the Bot instance
         """
         self.__dict__.update(kw)
