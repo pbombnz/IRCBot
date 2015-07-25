@@ -145,7 +145,7 @@ class IRCModulesManager(object):
         for module_name in self.loaded_modules:
             if is_method_in_module(module_name, 'on_raw_numeric'):
                 try:
-                    getattr(sys.modules[module_name], 'on_raw_numeric')(mask, numeric, target, message)
+                    getattr(sys.modules[module_name], 'on_raw_numeric')(self.bot, mask, numeric, target, message)
                 except Exception as err:
                     raise IRCModuleException(module_name, err)
 
