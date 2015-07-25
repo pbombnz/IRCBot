@@ -8,7 +8,7 @@ import random
 from collections import OrderedDict
 
 from irclib.dict import IRCDict
-from irclib.general import console_print
+from irclib.util import console_print
 from irclib.moduleManager import IRCModulesManager
 
 

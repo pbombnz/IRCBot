@@ -1,7 +1,7 @@
 import sys
 import importlib
 import irclib.bot
-from irclib.general import console_print
+from irclib.util import console_print
 
 
 class IRCModulesManager(object):
