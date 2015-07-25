@@ -1,4 +1,4 @@
-class Dict(dict):
+class IRCDict(dict):
     """
         An Internal class that overrides certain methods of a standard dictionary
         object in order for the keys to be case insensitive.

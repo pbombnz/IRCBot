@@ -4,13 +4,12 @@ import threading
 import ssl
 import time
 import re
-import sys
 import random
-import importlib
-import importlib.util
 from collections import OrderedDict
 
-import irclib.dict
+from irclib.dict import IRCDict
+from irclib.general import console_print
+from irclib.moduleManager import IRCModulesManager
 
 
 # Importing bot modules
@@ -47,7 +46,7 @@ class IRCBot(object):
     """
 
     # Initialising variables for channel information
-    channel_info = irclib.dict.Dict()
+    channel_info = IRCDict()
     channel_info_names_list_index = 0
 
     def __init__(self, server: str, port: int, is_ssl: bool, nick_name: str, user_name: str, real_name: str,
