@@ -10,11 +10,7 @@ from collections import OrderedDict
 from irclib.dict import IRCDict
 from irclib.util import console_print
 from irclib.moduleManager import IRCModulesManager
-
-
-# Importing bot modules
-import modules
-import resources
+from irclib.module import IRCModuleException
 
 # Regular expressions of common IRC events
 IRC_EVENT_PATTERN = {'RAW-NUMERIC': ":(.*)\s(\d\d\d)\s(.*)\s:(.*)",
@@ -44,6 +40,12 @@ class IRCBot(object):
         Parsing data recieved from the server so the user of the library doesn't have to implement certain activities
         themselves such as collecting channel data.
     """
+
+    # Importing bot modules
+    # noinspection PyUnresolvedReferences
+    import modules
+    # noinspection PyUnresolvedReferences
+    import resources
 
     # Initialising variables for channel information
     channel_info = IRCDict()
@@ -76,6 +78,7 @@ class IRCBot(object):
 
         # Declaring variables that will hold the module names
         self.irc_modules = IRCModulesManager(self)
+        print(self.irc_modules.loaded_modules)
         # self.loaded_modules = set()
         # self.loading_modules = set()    # Note, that the loading and unloading sets are constructed due to the fact we can not
         # self.unloading_modules = set()  # edit the loaded_modules set when being iterated.
@@ -218,7 +221,7 @@ class IRCBot(object):
                         for op in self.channel_info[channel]:
                             if user_org_nick in self.channel_info[channel][op]:
                                 self.channel_info[channel][op].remove(user_org_nick)
-                                self.channel_info[channel][op].append(user_new_nick)
+                                self.channel_info[channel][op].add(user_new_nick)
                                 break
 
                     if user_org_nick == self.nick_name:
@@ -514,12 +517,11 @@ class IRCBot(object):
                 error_message = parsed_data[0]
                 self.irc_modules.on_error(error_message)
 
-        except Exception as error:
-            pass
-            # console_print("MODULE-ERROR",
-            #               "MODULE: " + module_name + " INPUT: " + str(parsed_data) + " ERROR MESSAGE: " + str(
-            #                   error))
-            # self.irc_modules.unload_module(module_name)
+        except IRCModuleException as module_error:
+            console_print("MODULE-ERROR", "MODULE: " + module_error.module_name +
+                          " INPUT: " + str(parsed_data) +
+                          " ERROR MESSAGE: " + str(module_error.exception))
+            self.irc_modules.unload_module(module_error.module_name)
 
     def send_raw_message(self, message):
         """
@@ -693,7 +695,7 @@ class IRCBot(object):
         """
             :return: returns a 'module' object named resources.
         """
-        return resources
+        return self.resources
 
     def get_loaded_modules(self):
         """

@@ -1,11 +1,18 @@
-from irclib.bot import Bot
+from irclib.bot import IRCBot
+
+
+class IRCModuleException(Exception):
+    def __init__(self, module_name :str, exception: Exception):
+        self.module_name = module_name
+        self.exception = exception
+        pass
 
 
 class IRCModule(object):
-    def __init__(self, irc: Bot):
+    def __init__(self, bot: IRCBot):
         pass
 
-    def on_process_forever(self, irc):
+    def on_process_forever(self, bot: IRCBot):
         pass
 
     def on_raw_numeric(self, mask, numeric, target, message):

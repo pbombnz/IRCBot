@@ -1,12 +1,13 @@
 import sys
 import importlib
 import irclib.bot
+from irclib.module import IRCModuleException
 from irclib.util import console_print
 
 
 class IRCModulesManager(object):
 
-    def __init__(self, irc_bot: object):
+    def __init__(self, irc_bot: irclib.bot.IRCBot):
         # Declaring variables that will hold the module names
         self.loaded_modules_instance = list()
 
@@ -81,8 +82,8 @@ class IRCModulesManager(object):
             :return: bool. True, if all modules were reloaded successfully, otherwise False.
         """
         try:
-            importlib.reload(irclib.bot.resources)  # Reloading modules
-            importlib.reload(irclib.bot.modules)  # Reloading modules
+            importlib.reload(self.irc_bot.resources)  # Reloading modules
+            importlib.reload(self.irc_bot.modules)  # Reloading modules
         except IOError:
             # Indicates compiler errors in one of the modules, which also means all none of the other modules can be loaded
             console_print("MODULE-RELOAD",
@@ -127,124 +128,177 @@ class IRCModulesManager(object):
                 self.unloaded_modules.add(module_name)
             self.unloading_modules.clear()
 
-    def is_method_in_module(self, module_name: str, function_name: str):
-        if hasattr(sys.modules[module_name], function_name):
-            if callable(getattr(sys.modules[module_name], function_name)):
-                return True
-        return False
-
     def initialise_all_modules(self):
         for module_name in self.loaded_modules:
             self.initialise_module(module_name)
 
     def initialise_module(self, module_name):
-        if self.is_method_in_module(module_name, 'on_init'):
+        if is_method_in_module(module_name, 'on_init'):
             getattr(sys.modules[module_name], 'on_init')(self.irc_bot)
 
     def on_process_forever(self):
         for module_name in self.loaded_modules:
-            if self.is_method_in_module(module_name, 'on_process_forever'):
+            if is_method_in_module(module_name, 'on_process_forever'):
                 try:
                     getattr(sys.modules[module_name], 'on_process_forever')(self.irc_bot)
-                except Exception as error:
-                    console_print("MODULE-ERROR",
-                                  "MODULE: " + str(module_name) + " | INPUT: Constant Call | ERROR MESSAGE: " + str(
-                                      error))
-                    self.unload_module(module_name)
+                except Exception as err:
+                    raise IRCModuleException(module_name, err)
 
     def on_raw_numeric(self, mask, numeric, target, message):
         for module_name in self.loaded_modules:
-            if self.is_method_in_module(module_name, 'on_raw_numeric'):
-                getattr(sys.modules[module_name], 'on_raw_numeric')(mask, numeric, target, message)
+            if is_method_in_module(module_name, 'on_raw_numeric'):
+                try:
+                    getattr(sys.modules[module_name], 'on_raw_numeric')(mask, numeric, target, message)
+                except Exception as err:
+                    raise IRCModuleException(module_name, err)
 
     def on_nick_change(self, user_mask, user_old_nick, user_new_nick):
         for module_name in self.loaded_modules:
-            if self.is_method_in_module(module_name, 'on_nick_change'):
-                getattr(sys.modules[module_name], 'on_nick_change')(user_mask, user_old_nick, user_new_nick)
+            if is_method_in_module(module_name, 'on_nick_change'):
+                try:
+                    getattr(sys.modules[module_name], 'on_nick_change')(self.irc_bot, user_mask, user_old_nick, user_new_nick)
+                except Exception as err:
+                    raise IRCModuleException(module_name, err)
 
     def on_action(self, user_mask, user_nick, channel, action):
         for module_name in self.loaded_modules:
-            if self.is_method_in_module(module_name, 'on_action'):
-                getattr(sys.modules[module_name], 'on_action')(user_mask, user_nick, channel, action)
+            if is_method_in_module(module_name, 'on_action'):
+                try:
+                    getattr(sys.modules[module_name], 'on_action')(self.irc_bot, user_mask, user_nick, channel, action)
+                except Exception as err:
+                    raise IRCModuleException(module_name, err)
 
     def on_channel_pm(self, user_mask, user_nick, channel, message):
         for module_name in self.loaded_modules:
-            if self.is_method_in_module(module_name, 'on_channel_pm'):
-                getattr(sys.modules[module_name], 'on_channel_pm')(user_mask, user_nick, channel, message)
+            if is_method_in_module(module_name, 'on_channel_pm'):
+                try:
+                    getattr(sys.modules[module_name], 'on_channel_pm')(self.irc_bot, user_mask, user_nick, channel, message)
+                except Exception as err:
+                    raise IRCModuleException(module_name, err)
 
     def on_ctcp(self, user_mask, user_nick, target, ctcp_command, ctcp_params):
         for module_name in self.loaded_modules:
-            if self.is_method_in_module(module_name, 'on_ctcp'):
-                getattr(sys.modules[module_name], 'on_ctcp')(user_mask, user_nick, target, ctcp_command, ctcp_params)
+            if is_method_in_module(module_name, 'on_ctcp'):
+                try:
+                    getattr(sys.modules[module_name], 'on_ctcp')(self.irc_bot, user_mask, user_nick, target, ctcp_command, ctcp_params)
+                except Exception as err:
+                    raise IRCModuleException(module_name, err)
 
     def on_user_pm(self, user_mask, user_nick, target, message):
         for module_name in self.loaded_modules:
-            if self.is_method_in_module(module_name, 'on_user_pm'):
-                getattr(sys.modules[module_name], 'on_user_pm')(user_mask, user_nick, target, message)
+            if is_method_in_module(module_name, 'on_user_pm'):
+                try:
+                    getattr(sys.modules[module_name], 'on_user_pm')(self.irc_bot, user_mask, user_nick, target, message)
+                except Exception as err:
+                    raise IRCModuleException(module_name, err)
 
     def on_kick(self, user_mask, user_nick, channel, target, message):
         for module_name in self.loaded_modules:
-            if self.is_method_in_module(module_name, 'on_kick'):
-                getattr(sys.modules[module_name], 'on_kick')(user_mask, user_nick, channel, target, message)
+            if is_method_in_module(module_name, 'on_kick'):
+                try:
+                    getattr(sys.modules[module_name], 'on_kick')(self.irc_bot, user_mask, user_nick, channel, target, message)
+                except Exception as err:
+                    raise IRCModuleException(module_name, err)
 
     def on_invite(self, user_mask, user_nick, target, channel):
         for module_name in self.loaded_modules:
-            if self.is_method_in_module(module_name, 'on_invite'):
-                getattr(sys.modules[module_name], 'on_invite')(user_mask, user_nick, target, channel)
+            if is_method_in_module(module_name, 'on_invite'):
+                try:
+                    getattr(sys.modules[module_name], 'on_invite')(self.irc_bot, user_mask, user_nick, target, channel)
+                except Exception as err:
+                    raise IRCModuleException(module_name, err)
 
     def on_join(self, user_mask, user_nick, channel):
         for module_name in self.loaded_modules:
-            if self.is_method_in_module(module_name, 'on_join'):
-                getattr(sys.modules[module_name], 'on_join')(user_mask, user_nick, channel)
+            if is_method_in_module(module_name, 'on_join'):
+                try:
+                    getattr(sys.modules[module_name], 'on_join')(self.irc_bot, user_mask, user_nick, channel)
+                except Exception as err:
+                    raise IRCModuleException(module_name, err)
 
     def on_part(self, user_mask, user_nick, channel, part_message):
         for module_name in self.loaded_modules:
-            if self.is_method_in_module(module_name, 'on_part'):
-                getattr(sys.modules[module_name], 'on_part')(user_mask, user_nick, channel, part_message)
+            if is_method_in_module(module_name, 'on_part'):
+                try:
+                    getattr(sys.modules[module_name], 'on_part')(self.irc_bot, user_mask, user_nick, channel, part_message)
+                except Exception as err:
+                    raise IRCModuleException(module_name, err)
 
     def on_quit(self, user_mask, user_nick, quit_message):
         for module_name in self.loaded_modules:
-            if self.is_method_in_module(module_name, 'on_quit'):
-                getattr(sys.modules[module_name], 'on_quit')(user_mask, user_nick, quit_message)
+            if is_method_in_module(module_name, 'on_quit'):
+                try:
+                    getattr(sys.modules[module_name], 'on_quit')(self.irc_bot, user_mask, user_nick, quit_message)
+                except Exception as err:
+                    raise IRCModuleException(module_name, err)
 
     def on_channel_notice(self, user_mask, user_nick, channel, message):
         for module_name in self.loaded_modules:
-            if self.is_method_in_module(module_name, 'on_channel_notice'):
-                getattr(sys.modules[module_name], 'on_channel_notice')(user_mask, user_nick, channel, message)
+            if is_method_in_module(module_name, 'on_channel_notice'):
+                try:
+                    getattr(sys.modules[module_name], 'on_channel_notice')(self.irc_bot, user_mask, user_nick, channel, message)
+                except Exception as err:
+                    raise IRCModuleException(module_name, err)
 
     def on_user_notice(self, user_mask, user_nick, target, message):
         for module_name in self.loaded_modules:
-            if self.is_method_in_module(module_name, 'on_user_notice'):
-                getattr(sys.modules[module_name], 'on_user_notice')(user_mask, user_nick, target, message)
+            if is_method_in_module(module_name, 'on_user_notice'):
+                try:
+                    getattr(sys.modules[module_name], 'on_user_notice')(self.irc_bot, user_mask, user_nick, target, message)
+                except Exception as err:
+                    raise IRCModuleException(module_name, err)
 
     def on_notice_auth(self, mask, message):
         for module_name in self.loaded_modules:
-            if self.is_method_in_module(module_name, 'on_notice_auth'):
-                getattr(sys.modules[module_name], 'on_notice_auth')(mask, message)
+            if is_method_in_module(module_name, 'on_notice_auth'):
+                try:
+                    getattr(sys.modules[module_name], 'on_notice_auth')(self.irc_bot, mask, message)
+                except Exception as err:
+                    raise IRCModuleException(module_name, err)
 
     def on_ping(self, ping_reply):
         for module_name in self.loaded_modules:
-            if self.is_method_in_module(module_name, 'on_ping'):
-                getattr(sys.modules[module_name], 'on_ping')(ping_reply)
+            if is_method_in_module(module_name, 'on_ping'):
+                try:
+                    getattr(sys.modules[module_name], 'on_ping')(self.irc_bot, ping_reply)
+                except Exception as err:
+                    raise IRCModuleException(module_name, err)
 
     def on_mode_user(self, user, target, mode_sting):
         for module_name in self.loaded_modules:
-            if self.is_method_in_module(module_name, 'on_mode_user'):
-                getattr(sys.modules[module_name], 'on_mode_user')(user, target, mode_sting)
+            if is_method_in_module(module_name, 'on_mode_user'):
+                try:
+                    getattr(sys.modules[module_name], 'on_mode_user')(self.irc_bot, user, target, mode_sting)
+                except Exception as err:
+                    raise IRCModuleException(module_name, err)
 
     def on_mode_channel_setbyuser(self, user_mask, user_nick, channel, mode_sting, mode_params):
         for module_name in self.loaded_modules:
-            if self.is_method_in_module(module_name, 'on_mode_channel_setbyuser'):
-                getattr(sys.modules[module_name], 'on_mode_channel_setbyuser')(user_mask, user_nick, channel,
-                                                                               mode_sting, mode_params)
+            if is_method_in_module(module_name, 'on_mode_channel_setbyuser'):
+                try:
+                    getattr(sys.modules[module_name], 'on_mode_channel_setbyuser')(self.irc_bot, user_mask, user_nick, channel, mode_sting, mode_params)
+                except Exception as err:
+                    raise IRCModuleException(module_name, err)
 
     def on_mode_channel_setbyserv(self, serv_user, channel, mode_sting, mode_params):
         for module_name in self.loaded_modules:
-            if self.is_method_in_module(module_name, 'on_mode_channel_setbyserv'):
-                getattr(sys.modules[module_name], 'on_mode_channel_setbyserv')(serv_user, channel, mode_sting,
-                                                                               mode_params)
+            if is_method_in_module(module_name, 'on_mode_channel_setbyserv'):
+                try:
+                    getattr(sys.modules[module_name], 'on_mode_channel_setbyserv')(self.irc_bot, serv_user, channel, mode_sting, mode_params)
+                except Exception as err:
+                    raise IRCModuleException(module_name, err)
 
     def on_error(self, error_message):
         for module_name in self.loaded_modules:
-            if self.is_method_in_module(module_name, 'on_error'):
-                getattr(sys.modules[module_name], 'on_error')(error_message)
+            if is_method_in_module(module_name, 'on_error'):
+                try:
+                    getattr(sys.modules[module_name], 'on_error')(self.irc_bot, error_message)
+                except Exception as err:
+                    raise IRCModuleException(module_name, err)
+
+
+def is_method_in_module(module_name: str, function_name: str):
+    if hasattr(sys.modules[module_name], function_name):
+        if callable(getattr(sys.modules[module_name], function_name)):
+            return True
+    return False
