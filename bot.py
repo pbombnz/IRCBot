@@ -1,4 +1,4 @@
-import t
+from irclib import t
 
 server = "irc.sacnr.com"
 port = 6697
