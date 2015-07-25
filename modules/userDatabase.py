@@ -40,7 +40,7 @@ def on_init(bot):
         load_user_database(bot)
     else:
         try:
-            bot_owner = bot.BOT_OWNER
+            bot_owner = bot.get_resources().BOT_OWNER
         except NameError:
             bot.quit(error_message="bot owner undefined in resources module. Create a variable called \"BOT_OWNER\" "
                                    "and declare it as bot owner's irc nickname.", reconnect_on_error=False)

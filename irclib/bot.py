@@ -7,15 +7,15 @@ import re
 import random
 from collections import OrderedDict
 
-from irclib.dict import *
 from irclib.moduleManager import IRCModulesManager
-# noinspection PyUnresolvedReferences
 from irclib.util import *
 from irclib.module import IRCModuleException
 
 # Importing bot modules
 # noinspection PyUnresolvedReferences
 import modules
+# noinspection PyUnresolvedReferences
+import resources
 
 # Regular expressions of common IRC events
 IRC_EVENT_PATTERN = {'RAW-NUMERIC': ":(.*)\s(\d\d\d)\s(.*)\s:(.*)",
@@ -691,6 +691,9 @@ class IRCBot(object):
                      of that channel's specific information
         """
         return self.channel_info
+
+    def get_resources(self):
+        return resources
 
     def get_loaded_modules(self):
         """
