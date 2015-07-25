@@ -139,9 +139,9 @@ def on_channel_pm(irc, user_mask, user, channel, message):
                 return
 
             if command[1].lower() in irc.user_info:
-                old_access_level = irc.user_info[command[1].lower()]["botLevel"]
+                old_access_level = irc.user_info[command[1].lower()]["access_level"]
                 if old_access_level != int(command[2]):
-                    irc.user_info[command[1].lower()]["botLevel"] = int(command[2])
+                    irc.user_info[command[1].lower()]["access_level"] = int(command[2])
                     userDatabase.save_user_database(irc)
                     irc.send_private_message(channel,
                                              '\u00033SUCESS: Bot Level has changed for {0} from {1} to {2}.'.format(
