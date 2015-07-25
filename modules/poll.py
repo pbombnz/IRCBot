@@ -16,7 +16,7 @@ class CaseInsensitiveDict(dict):
 poll_data = CaseInsensitiveDict()
 
 
-def on_constant_call(irc):
+def on_process_forever(bot):
     if len(poll_data) < 1:
         return
 
@@ -26,12 +26,12 @@ def on_constant_call(irc):
         if not poll_data[channel]['nearExpire']:
             if (poll_data[channel]['expireTime'] - time.time()) <= 60.0:
                 poll_data[channel]['nearExpire'] = True
-                irc.send_private_message(channel, "The poll for this channel is about to expire in a minute. "
+                bot.send_private_message(channel, "The poll for this channel is about to expire in a minute. "
                                                   "Please check the !poll and !vote if you haven't yet.")
 
         if time.time() > poll_data[channel]['expireTime']:
-            irc.send_private_message(channel, 'The poll for this channel has expired. The Final results are...')
-            irc.send_private_message(channel,
+            bot.send_private_message(channel, 'The poll for this channel has expired. The Final results are...')
+            bot.send_private_message(channel,
                                      'Expired Poll for {0}: \"{1}\" By {2} on {3}, Votes: Yes: {4} No: {5}'.format(
                                          str(poll_data[channel]['channel']),
                                          str(poll_data[channel]['poll']),

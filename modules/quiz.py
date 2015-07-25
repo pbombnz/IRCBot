@@ -54,7 +54,7 @@ def on_init(irc):
         save_quiz_database()
 
 
-def on_constant_call(irc):
+def on_process_forever(bot):
     current_time = time.time()
 
     for channel in tmp_quiz_data:
@@ -62,9 +62,9 @@ def on_constant_call(irc):
             time_difference = current_time - tmp_quiz_data[channel]["startTime"]
             if time_difference >= tmp_quiz_data[channel]["timePeriod"]:
                 if len(tmp_quiz_data[channel]["players"].keys()) > 1:
-                    irc.send_private_message(channel, '5Quiz automatically finished - No one got the right answer.')
+                    bot.send_private_message(channel, '5Quiz automatically finished - No one got the right answer.')
                 else:
-                    irc.send_private_message(channel, '5Quiz automatically finished - Time in the round ended.')
+                    bot.send_private_message(channel, '5Quiz automatically finished - Time in the round ended.')
 
                 save_quiz_database()
                 del tmp_quiz_data[channel]
