@@ -8,12 +8,10 @@ import random
 from collections import OrderedDict
 
 from irclib.dict import *
-from irclib.moduleManager import *
-# noinspection PyUnresolvedReferences
-from irclib.module import *
+from irclib.moduleManager import IRCModulesManager
 # noinspection PyUnresolvedReferences
 from irclib.util import *
-from irclib.exceptions import *
+from irclib.module import IRCModuleException
 
 # Importing bot modules
 # noinspection PyUnresolvedReferences
@@ -88,7 +86,7 @@ class IRCBot(object):
         console_print("INIT", "==============================================================")
         console_print("INIT", "Python IRC Bot Framework - By Prashant Bhikhu (PBombNZ) [2015]")
         console_print("INIT", "==============================================================")
-        console_print("CONFIG", "SERVER: {0} PORT: {1} SSL: {2}".format(str(server), str(port), str(ssl)))
+        console_print("CONFIG", "SERVER: {0} PORT: {1} SSL: {2}".format(str(server), str(port), str(is_ssl)))
         console_print("CONFIG",
                       "NICKNAME: \"{0}\" USERNAME: \"{1}\" REALNAME: \"{2}\"".format(str(nick_name), str(user_name),
                                                                                      str(real_name)))
@@ -671,7 +669,10 @@ class IRCBot(object):
                 "QUIT :" + str(quit_message) + " - Python IRC Framework - By Prashant B. (https://github.com/pbombnz)")
 
         # Clean up variables on quit (regardless if it was an expected quit or not)
-        self.irc_socket.close()
+        try:
+            self.irc_socket.close()
+        except AttributeError:
+            pass
         self.is_connect = False
         self.channel_info.clear()
         self.channel_info_names_list_index = 0

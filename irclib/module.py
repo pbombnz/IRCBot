@@ -5,11 +5,16 @@ class IRCModuleException(Exception):
         pass
 
 
+"""
 class IRCModule(object):
-    def __init__(self, bot_obj: object):
+
+    def __init__(self, bot):
+        self.bot = bot
+
+    def on_process_forever(self):
         pass
 
-    def on_process_forever(self, bot_obj: object):
+    def on_connect(self):
         pass
 
     def on_raw_numeric(self, mask, numeric, target, message):
@@ -68,3 +73,7 @@ class IRCModule(object):
 
     def on_error(self, error_message):
         pass
+
+    def on_unload(self):
+        pass
+"""

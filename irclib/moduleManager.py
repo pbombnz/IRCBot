@@ -6,16 +6,14 @@ from irclib.util import console_print
 
 class IRCModulesManager(object):
 
-    def __init__(self, irc_bot: object):
+    def __init__(self, bot):
         # Declaring variables that will hold the module names
-        self.loaded_modules_instance = list()
-
         self.loaded_modules = set()
         self.loading_modules = set()  # Note, that the loading and unloading sets are constructed due to the fact we can not
         self.unloading_modules = set()  # edit the loaded_modules set when being iterated.
         self.unloaded_modules = set()
 
-        self.irc_bot = irc_bot
+        self.bot = bot
 
         self.load_all_modules()
 
@@ -81,8 +79,8 @@ class IRCModulesManager(object):
             :return: bool. True, if all modules were reloaded successfully, otherwise False.
         """
         try:
-            importlib.reload(self.irc_bot.resources)  # Reloading modules
-            importlib.reload(self.irc_bot.modules)  # Reloading modules
+            importlib.reload(self.bot.resources)  # Reloading modules
+            importlib.reload(self.bot.modules)  # Reloading modules
         except IOError:
             # Indicates compiler errors in one of the modules, which also means all none of the other modules can be loaded
             console_print("MODULE-RELOAD",
@@ -133,13 +131,13 @@ class IRCModulesManager(object):
 
     def initialise_module(self, module_name):
         if is_method_in_module(module_name, 'on_init'):
-            getattr(sys.modules[module_name], 'on_init')(self.irc_bot)
+            getattr(sys.modules[module_name], 'on_init')(self.bot)
 
     def on_process_forever(self):
         for module_name in self.loaded_modules:
             if is_method_in_module(module_name, 'on_process_forever'):
                 try:
-                    getattr(sys.modules[module_name], 'on_process_forever')(self.irc_bot)
+                    getattr(sys.modules[module_name], 'on_process_forever')(self.bot)
                 except Exception as err:
                     raise IRCModuleException(module_name, err)
 
@@ -155,7 +153,7 @@ class IRCModulesManager(object):
         for module_name in self.loaded_modules:
             if is_method_in_module(module_name, 'on_nick_change'):
                 try:
-                    getattr(sys.modules[module_name], 'on_nick_change')(self.irc_bot, user_mask, user_old_nick, user_new_nick)
+                    getattr(sys.modules[module_name], 'on_nick_change')(self.bot, user_mask, user_old_nick, user_new_nick)
                 except Exception as err:
                     raise IRCModuleException(module_name, err)
 
@@ -163,7 +161,7 @@ class IRCModulesManager(object):
         for module_name in self.loaded_modules:
             if is_method_in_module(module_name, 'on_action'):
                 try:
-                    getattr(sys.modules[module_name], 'on_action')(self.irc_bot, user_mask, user_nick, channel, action)
+                    getattr(sys.modules[module_name], 'on_action')(self.bot, user_mask, user_nick, channel, action)
                 except Exception as err:
                     raise IRCModuleException(module_name, err)
 
@@ -171,7 +169,7 @@ class IRCModulesManager(object):
         for module_name in self.loaded_modules:
             if is_method_in_module(module_name, 'on_channel_pm'):
                 try:
-                    getattr(sys.modules[module_name], 'on_channel_pm')(self.irc_bot, user_mask, user_nick, channel, message)
+                    getattr(sys.modules[module_name], 'on_channel_pm')(self.bot, user_mask, user_nick, channel, message)
                 except Exception as err:
                     raise IRCModuleException(module_name, err)
 
@@ -179,7 +177,7 @@ class IRCModulesManager(object):
         for module_name in self.loaded_modules:
             if is_method_in_module(module_name, 'on_ctcp'):
                 try:
-                    getattr(sys.modules[module_name], 'on_ctcp')(self.irc_bot, user_mask, user_nick, target, ctcp_command, ctcp_params)
+                    getattr(sys.modules[module_name], 'on_ctcp')(self.bot, user_mask, user_nick, target, ctcp_command, ctcp_params)
                 except Exception as err:
                     raise IRCModuleException(module_name, err)
 
@@ -187,7 +185,7 @@ class IRCModulesManager(object):
         for module_name in self.loaded_modules:
             if is_method_in_module(module_name, 'on_user_pm'):
                 try:
-                    getattr(sys.modules[module_name], 'on_user_pm')(self.irc_bot, user_mask, user_nick, target, message)
+                    getattr(sys.modules[module_name], 'on_user_pm')(self.bot, user_mask, user_nick, target, message)
                 except Exception as err:
                     raise IRCModuleException(module_name, err)
 
@@ -195,7 +193,7 @@ class IRCModulesManager(object):
         for module_name in self.loaded_modules:
             if is_method_in_module(module_name, 'on_kick'):
                 try:
-                    getattr(sys.modules[module_name], 'on_kick')(self.irc_bot, user_mask, user_nick, channel, target, message)
+                    getattr(sys.modules[module_name], 'on_kick')(self.bot, user_mask, user_nick, channel, target, message)
                 except Exception as err:
                     raise IRCModuleException(module_name, err)
 
@@ -203,7 +201,7 @@ class IRCModulesManager(object):
         for module_name in self.loaded_modules:
             if is_method_in_module(module_name, 'on_invite'):
                 try:
-                    getattr(sys.modules[module_name], 'on_invite')(self.irc_bot, user_mask, user_nick, target, channel)
+                    getattr(sys.modules[module_name], 'on_invite')(self.bot, user_mask, user_nick, target, channel)
                 except Exception as err:
                     raise IRCModuleException(module_name, err)
 
@@ -211,7 +209,7 @@ class IRCModulesManager(object):
         for module_name in self.loaded_modules:
             if is_method_in_module(module_name, 'on_join'):
                 try:
-                    getattr(sys.modules[module_name], 'on_join')(self.irc_bot, user_mask, user_nick, channel)
+                    getattr(sys.modules[module_name], 'on_join')(self.bot, user_mask, user_nick, channel)
                 except Exception as err:
                     raise IRCModuleException(module_name, err)
 
@@ -219,7 +217,7 @@ class IRCModulesManager(object):
         for module_name in self.loaded_modules:
             if is_method_in_module(module_name, 'on_part'):
                 try:
-                    getattr(sys.modules[module_name], 'on_part')(self.irc_bot, user_mask, user_nick, channel, part_message)
+                    getattr(sys.modules[module_name], 'on_part')(self.bot, user_mask, user_nick, channel, part_message)
                 except Exception as err:
                     raise IRCModuleException(module_name, err)
 
@@ -227,7 +225,7 @@ class IRCModulesManager(object):
         for module_name in self.loaded_modules:
             if is_method_in_module(module_name, 'on_quit'):
                 try:
-                    getattr(sys.modules[module_name], 'on_quit')(self.irc_bot, user_mask, user_nick, quit_message)
+                    getattr(sys.modules[module_name], 'on_quit')(self.bot, user_mask, user_nick, quit_message)
                 except Exception as err:
                     raise IRCModuleException(module_name, err)
 
@@ -235,7 +233,7 @@ class IRCModulesManager(object):
         for module_name in self.loaded_modules:
             if is_method_in_module(module_name, 'on_channel_notice'):
                 try:
-                    getattr(sys.modules[module_name], 'on_channel_notice')(self.irc_bot, user_mask, user_nick, channel, message)
+                    getattr(sys.modules[module_name], 'on_channel_notice')(self.bot, user_mask, user_nick, channel, message)
                 except Exception as err:
                     raise IRCModuleException(module_name, err)
 
@@ -243,7 +241,7 @@ class IRCModulesManager(object):
         for module_name in self.loaded_modules:
             if is_method_in_module(module_name, 'on_user_notice'):
                 try:
-                    getattr(sys.modules[module_name], 'on_user_notice')(self.irc_bot, user_mask, user_nick, target, message)
+                    getattr(sys.modules[module_name], 'on_user_notice')(self.bot, user_mask, user_nick, target, message)
                 except Exception as err:
                     raise IRCModuleException(module_name, err)
 
@@ -251,7 +249,7 @@ class IRCModulesManager(object):
         for module_name in self.loaded_modules:
             if is_method_in_module(module_name, 'on_notice_auth'):
                 try:
-                    getattr(sys.modules[module_name], 'on_notice_auth')(self.irc_bot, mask, message)
+                    getattr(sys.modules[module_name], 'on_notice_auth')(self.bot, mask, message)
                 except Exception as err:
                     raise IRCModuleException(module_name, err)
 
@@ -259,7 +257,7 @@ class IRCModulesManager(object):
         for module_name in self.loaded_modules:
             if is_method_in_module(module_name, 'on_ping'):
                 try:
-                    getattr(sys.modules[module_name], 'on_ping')(self.irc_bot, ping_reply)
+                    getattr(sys.modules[module_name], 'on_ping')(self.bot, ping_reply)
                 except Exception as err:
                     raise IRCModuleException(module_name, err)
 
@@ -267,7 +265,7 @@ class IRCModulesManager(object):
         for module_name in self.loaded_modules:
             if is_method_in_module(module_name, 'on_mode_user'):
                 try:
-                    getattr(sys.modules[module_name], 'on_mode_user')(self.irc_bot, user, target, mode_sting)
+                    getattr(sys.modules[module_name], 'on_mode_user')(self.bot, user, target, mode_sting)
                 except Exception as err:
                     raise IRCModuleException(module_name, err)
 
@@ -275,7 +273,7 @@ class IRCModulesManager(object):
         for module_name in self.loaded_modules:
             if is_method_in_module(module_name, 'on_mode_channel_setbyuser'):
                 try:
-                    getattr(sys.modules[module_name], 'on_mode_channel_setbyuser')(self.irc_bot, user_mask, user_nick, channel, mode_sting, mode_params)
+                    getattr(sys.modules[module_name], 'on_mode_channel_setbyuser')(self.bot, user_mask, user_nick, channel, mode_sting, mode_params)
                 except Exception as err:
                     raise IRCModuleException(module_name, err)
 
@@ -283,7 +281,7 @@ class IRCModulesManager(object):
         for module_name in self.loaded_modules:
             if is_method_in_module(module_name, 'on_mode_channel_setbyserv'):
                 try:
-                    getattr(sys.modules[module_name], 'on_mode_channel_setbyserv')(self.irc_bot, serv_user, channel, mode_sting, mode_params)
+                    getattr(sys.modules[module_name], 'on_mode_channel_setbyserv')(self.bot, serv_user, channel, mode_sting, mode_params)
                 except Exception as err:
                     raise IRCModuleException(module_name, err)
 
@@ -291,7 +289,7 @@ class IRCModulesManager(object):
         for module_name in self.loaded_modules:
             if is_method_in_module(module_name, 'on_error'):
                 try:
-                    getattr(sys.modules[module_name], 'on_error')(self.irc_bot, error_message)
+                    getattr(sys.modules[module_name], 'on_error')(self.bot, error_message)
                 except Exception as err:
                     raise IRCModuleException(module_name, err)
 

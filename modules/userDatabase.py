@@ -34,21 +34,25 @@ def load_user_database(irc):
     file.close()
 
 
-def on_init(irc):
+def on_init(bot):
     if os.path.isfile("./resources/users.dat"):
-        irc.add_attributes(user_info=dict())
-        load_user_database(irc)
+        bot.add_attributes(user_info=dict())
+        load_user_database(bot)
     else:
         try:
-            bot_owner = irc.get_resources.BOT_OWNER
+            bot_owner = bot.BOT_OWNER
         except NameError:
-            irc.quit(error_message="bot owner undefined in resources module. Create a variable called \"BOT_OWNER\" "
+            bot.quit(error_message="bot owner undefined in resources module. Create a variable called \"BOT_OWNER\" "
+                                   "and declare it as bot owner's irc nickname.", reconnect_on_error=False)
+            return
+        except AttributeError:
+            bot.quit(error_message="bot owner undefined in resources module. Create a variable called \"BOT_OWNER\" "
                                    "and declare it as bot owner's irc nickname.", reconnect_on_error=False)
             return
 
-        irc.add_attributes(user_info=dict())
-        create_user_account(irc, bot_owner, 3)
-        save_user_database(irc)
+        bot.add_attributes(user_info=dict())
+        create_user_account(bot, bot_owner, 3)
+        save_user_database(bot)
 
 
 def on_nick_change(irc, user_mask, user_old_nick, user_new_nick):
