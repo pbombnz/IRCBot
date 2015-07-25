@@ -8,9 +8,6 @@ MAX_SPAM = 50
 def on_channel_pm(bot, user_mask, user, channel, message):
     command = message.split()
 
-    if command[0].lower() == 'a':
-        bot.send_private_message(channel, "b")
-
     if command[0].lower() == '!join':
         if bot.user_info[user.lower()]["access_level"] >= 1:
             if len(command) == 2:
