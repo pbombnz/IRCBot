@@ -1,4 +1,4 @@
-from irclib import bot
+from irclib import Bot
 
 server = "irc.sacnr.com"
 port = 6697
@@ -8,6 +8,6 @@ nick_name = "PythonBot"
 real_name = "IRC Python Framework (By Prashant B.)"
 password = str()
 
-irc = bot.IRCBot(server, port, True, nick_name, user_name, real_name, password)
+irc = Bot.IRCBot(server, port, True, nick_name, user_name, real_name, password)
 irc.connect()
 irc.join('#PBomb')
