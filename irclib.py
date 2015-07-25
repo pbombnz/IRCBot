@@ -57,14 +57,22 @@ class IRCDict(dict):
         return dict.__setitem__(self, key.lower(), value)
 
 
-class IRCModulesMangager(object):
-    def __init__(self):
+class IRCModulesManager(object):
+
+    def __init__(self, irc_bot: object):
         # Declaring variables that will hold the module names
+        self.loaded_modules_instance = list()
+
         self.loaded_modules = set()
-        self.loading_modules = set()    # Note, that the loading and unloading sets are constructed due to the fact we can not
+        self.loading_modules = set()  # Note, that the loading and unloading sets are constructed due to the fact we can not
         self.unloading_modules = set()  # edit the loaded_modules set when being iterated.
         self.unloaded_modules = set()
 
+        self.irc_bot = irc_bot
+
+        self.load_all_modules()
+
+    def load_all_modules(self):
         for module in sys.modules:
             module_name = sys.modules[module].__name__
 
@@ -72,18 +80,237 @@ class IRCModulesMangager(object):
                 self.loaded_modules.add(module_name)
                 console_print("MODULE-LOAD", "loaded " + str(module_name) + ".")
 
+        self.initialise_all_modules()
+
+    def reload_module(self, module_name: str):
+        """
+            Reloads an individual module that was previously loaded.
+
+            :param module_name: The full-name of the module to be reloaded
+            :return: Returns True if the IRC module was reloaded successfully, otherwise return False.
+        """
+
+        # Firstly, we check if if the module being reloaded is the 'resources' module or an IRC module as they are
+        # the only two types of valid inputs when reloading.
+        if module_name == "resources":
+            # attempt to reload the resources modules and return True or false depending if was successful or not, respectively.
+            try:
+                importlib.reload(sys.modules["resources"])
+                console_print("MODULE-RELOAD", "Reloaded " + str(module_name) + ".")
+                return True
+            except IOError:
+                console_print("MODULE-RELOAD", "Unable to load " + str(module_name) + ".")
+                return False
+
+        if module_name.startswith("modules."):
+            # Checks if the module's name is even a IRC module
+            if module_name in self.loaded_modules or module_name in self.unloaded_modules:
+                # Knowing its an IRC module, we have to attempt to reload the module
+                try:
+                    importlib.reload(sys.modules[module_name])
+                    # If the module was was previously unloaded, we have to add it to the 'loaded_modules' set in order for it to be callable.
+                    if module_name in self.unloaded_modules:
+                        self.loading_modules.add(module_name)
+                    # Initialise the newly loaded module
+                    self.initialise_module(module_name)
+                    console_print("MODULE-RELOAD", "Reloaded " + str(module_name) + ".")
+                    return True
+                except IOError:
+                    # A compiler error occured and the module could not be loaded, hence we return False
+                    console_print("MODULE-RELOAD", "Unable to load " + str(module_name) + ".")
+                    return False
+
+        # if the module's name was not the 'resources' module or an IRC module (or simply doesnt exist), then
+        # there is no significance in reloading it hence why we return False
+        return False
+
+    def reload_all_modules(self):
+        """
+            Reloads all IRC Modules by reloading the 'modules' module which will result in all individual modules
+            being reloaded. It's also useful when you want to import a new module into the bot without restarting.
+            Simply add a new import line into the modules' folder's __init__.py and use this method and the new
+            module will be loaded (if there was no compiler errors present)
+
+            :return: bool. True, if all modules were reloaded successfully, otherwise False.
+        """
+        try:
+            importlib.reload(resources)  # Reloading modules
+            importlib.reload(modules)  # Reloading modules
+        except IOError:
+            # Indicates compiler errors in one of the modules, which also means all none of the other modules can be loaded
+            console_print("MODULE-RELOAD",
+                          "A specific module is causing all other modules to not be loaded due to a compiler error.")
+            return False
+
+        # clearing all module sets (except loaded) because all modules are reloaded anyways there is not going to be an unloaded module
+        self.loading_modules.clear()
+        self.unloading_modules.clear()
+        self.unloaded_modules.clear()
+
+        self.load_all_modules()
+        # Return true to indicate that all modules were loaded successfully
+        return True
+
+    def unload_module(self, module_name: str):
+        """
+            Unloads the specified module from execution of IRC events
+
+            :param module_name: The full name of the module you would like to unload
+            :return: Returns True, if unloading was sucessful otherwise false.
+        """
+
+        if module_name in self.loaded_modules:
+            self.unloading_modules.add(module_name)
+            console_print("MODULE-UNLOAD", "Unloaded " + str(module_name) + ".")
+            return True
+        else:
+            return False  # The module is already (or is going to be) unloaded.
+
+    def modify_module_sets(self):
+        if len(self.loading_modules) > 0:
+            for module_name in self.loading_modules:
+                self.unloaded_modules.discard(module_name)
+                self.loaded_modules.add(module_name)
+                self.initialise_module(module_name)
+            self.loading_modules.clear()
+
+        if len(self.unloading_modules) > 0:
+            for module_name in self.unloading_modules:
+                self.loaded_modules.discard(module_name)
+                self.unloaded_modules.add(module_name)
+            self.unloading_modules.clear()
+
+    def is_method_in_module(self, module_name: str, function_name: str):
+        if hasattr(sys.modules[module_name], function_name):
+            if callable(getattr(sys.modules[module_name], function_name)):
+                return True
+        return False
 
     def initialise_all_modules(self):
+        for module_name in self.loaded_modules:
+            self.initialise_module(module_name)
+
+    def initialise_module(self, module_name):
+        if self.is_method_in_module(module_name, 'on_init'):
+            getattr(sys.modules[module_name], 'on_init')(self.irc_bot)
+
+    def on_process_forever(self):
+        for module_name in self.loaded_modules:
+            if self.is_method_in_module(module_name, 'on_process_forever'):
+                try:
+                    getattr(sys.modules[module_name], 'on_process_forever')(self.irc_bot)
+                except Exception as error:
+                    console_print("MODULE-ERROR",
+                                  "MODULE: " + str(module_name) + " | INPUT: Constant Call | ERROR MESSAGE: " + str(
+                                      error))
+                    self.unload_module(module_name)
+
+    def on_raw_numeric(self, mask, numeric, target, message):
+        for module_name in self.loaded_modules:
+            if self.is_method_in_module(module_name, 'on_raw_numeric'):
+                getattr(sys.modules[module_name], 'on_raw_numeric')(mask, numeric, target, message)
+
+    def on_nick_change(self, user_mask, user_old_nick, user_new_nick):
+        for module_name in self.loaded_modules:
+            if self.is_method_in_module(module_name, 'on_nick_change'):
+                getattr(sys.modules[module_name], 'on_nick_change')(user_mask, user_old_nick, user_new_nick)
+
+    def on_action(self, user_mask, user_nick, channel, action):
+        for module_name in self.loaded_modules:
+            if self.is_method_in_module(module_name, 'on_action'):
+                getattr(sys.modules[module_name], 'on_action')(user_mask, user_nick, channel, action)
+
+    def on_channel_pm(self, user_mask, user_nick, channel, message):
+        for module_name in self.loaded_modules:
+            if self.is_method_in_module(module_name, 'on_channel_pm'):
+                getattr(sys.modules[module_name], 'on_channel_pm')(user_mask, user_nick, channel, message)
+
+    def on_ctcp(self, user_mask, user_nick, target, ctcp_command, ctcp_params):
+        for module_name in self.loaded_modules:
+            if self.is_method_in_module(module_name, 'on_ctcp'):
+                getattr(sys.modules[module_name], 'on_ctcp')(user_mask, user_nick, target, ctcp_command, ctcp_params)
+
+    def on_user_pm(self, user_mask, user_nick, target, message):
+        for module_name in self.loaded_modules:
+            if self.is_method_in_module(module_name, 'on_user_pm'):
+                getattr(sys.modules[module_name], 'on_user_pm')(user_mask, user_nick, target, message)
+
+    def on_kick(self, user_mask, user_nick, channel, target, message):
+        for module_name in self.loaded_modules:
+            if self.is_method_in_module(module_name, 'on_kick'):
+                getattr(sys.modules[module_name], 'on_kick')(user_mask, user_nick, channel, target, message)
+
+    def on_invite(self, user_mask, user_nick, target, channel):
+        for module_name in self.loaded_modules:
+            if self.is_method_in_module(module_name, 'on_invite'):
+                getattr(sys.modules[module_name], 'on_invite')(user_mask, user_nick, target, channel)
+
+    def on_join(self, user_mask, user_nick, channel):
+        for module_name in self.loaded_modules:
+            if self.is_method_in_module(module_name, 'on_join'):
+                getattr(sys.modules[module_name], 'on_join')(user_mask, user_nick, channel)
+
+    def on_part(self, user_mask, user_nick, channel, part_message):
+        for module_name in self.loaded_modules:
+            if self.is_method_in_module(module_name, 'on_part'):
+                getattr(sys.modules[module_name], 'on_part')(user_mask, user_nick, channel, part_message)
+
+    def on_quit(self, user_mask, user_nick, quit_message):
+        for module_name in self.loaded_modules:
+            if self.is_method_in_module(module_name, 'on_quit'):
+                getattr(sys.modules[module_name], 'on_quit')(user_mask, user_nick, quit_message)
+
+    def on_channel_notice(self, user_mask, user_nick, channel, message):
+        for module_name in self.loaded_modules:
+            if self.is_method_in_module(module_name, 'on_channel_notice'):
+                getattr(sys.modules[module_name], 'on_channel_notice')(user_mask, user_nick, channel, message)
+
+    def on_user_notice(self, user_mask, user_nick, target, message):
+        for module_name in self.loaded_modules:
+            if self.is_method_in_module(module_name, 'on_user_notice'):
+                getattr(sys.modules[module_name], 'on_user_notice')(user_mask, user_nick, target, message)
+
+    def on_notice_auth(self, mask, message):
+        for module_name in self.loaded_modules:
+            if self.is_method_in_module(module_name, 'on_notice_auth'):
+                getattr(sys.modules[module_name], 'on_notice_auth')(mask, message)
+
+    def on_ping(self, ping_reply):
+        for module_name in self.loaded_modules:
+            if self.is_method_in_module(module_name, 'on_ping'):
+                getattr(sys.modules[module_name], 'on_ping')(ping_reply)
+
+    def on_mode_user(self, user, target, mode_sting):
+        for module_name in self.loaded_modules:
+            if self.is_method_in_module(module_name, 'on_mode_user'):
+                getattr(sys.modules[module_name], 'on_mode_user')(user, target, mode_sting)
+
+    def on_mode_channel_setbyuser(self, user_mask, user_nick, channel, mode_sting, mode_params):
+        for module_name in self.loaded_modules:
+            if self.is_method_in_module(module_name, 'on_mode_channel_setbyuser'):
+                getattr(sys.modules[module_name], 'on_mode_channel_setbyuser')(user_mask, user_nick, channel,
+                                                                               mode_sting, mode_params)
+
+    def on_mode_channel_setbyserv(self, serv_user, channel, mode_sting, mode_params):
+        for module_name in self.loaded_modules:
+            if self.is_method_in_module(module_name, 'on_mode_channel_setbyserv'):
+                getattr(sys.modules[module_name], 'on_mode_channel_setbyserv')(serv_user, channel, mode_sting,
+                                                                               mode_params)
+
+    def on_error(self, error_message):
+        for module_name in self.loaded_modules:
+            if self.is_method_in_module(module_name, 'on_error'):
+                getattr(sys.modules[module_name], 'on_error')(error_message)
 
 
 class IRCModule(object):
-    def __init__(self):
+    def __init__(self, irc):
         pass
 
     def on_process_forever(self, irc):
         pass
 
-    def on_raw_numeric(self, mask, numeric, message):
+    def on_raw_numeric(self, mask, numeric, target, message):
         pass
 
     def on_nick_change(self, user_mask, user_old_nick, user_new_nick):
@@ -95,7 +322,7 @@ class IRCModule(object):
     def on_channel_pm(self, user_mask, user_nick, channel, message):
         pass
 
-    def on_ctcp(self, user_mask, user_nick, target, ctcp_command,ctcp_params):
+    def on_ctcp(self, user_mask, user_nick, target, ctcp_command, ctcp_params):
         pass
 
     def on_user_pm(self, user_mask, user_nick, target, message):
@@ -131,7 +358,7 @@ class IRCModule(object):
     def on_mode_user(self, user, target, mode_sting):
         pass
 
-    def on_mode_channel_setbyuser(self, user_mask, user_nick, channel,mode_sting, mode_params):
+    def on_mode_channel_setbyuser(self, user_mask, user_nick, channel, mode_sting, mode_params):
         pass
 
     def on_mode_channel_setbyserv(self, serv_user, channel, mode_sting, mode_params):
@@ -152,7 +379,8 @@ class IRCBot(object):
     channel_info = IRCDict()
     channel_info_names_list_index = 0
 
-    def __init__(self, server: str, port: int, is_ssl: bool, nick_name: str, user_name: str, real_name: str, password: str=None):
+    def __init__(self, server: str, port: int, is_ssl: bool, nick_name: str, user_name: str, real_name: str,
+                 password: str=None):
         """
             Initialise the Bot object and defines bot parameters
 
@@ -173,10 +401,11 @@ class IRCBot(object):
         self.real_name = real_name
         self.password = password
         self.host_mask = [str(), str(), str()]
-        self.ircConnection = None
+        self.irc_socket = None
         self.is_connect = False
 
         # Declaring variables that will hold the module names
+        self.irc_modules = IRCModulesManager(self)
         # self.loaded_modules = set()
         # self.loading_modules = set()    # Note, that the loading and unloading sets are constructed due to the fact we can not
         # self.unloading_modules = set()  # edit the loaded_modules set when being iterated.
@@ -187,7 +416,9 @@ class IRCBot(object):
         console_print("INIT", "Python IRC Bot Framework - By Prashant Bhikhu (PBombNZ) [2015]")
         console_print("INIT", "==============================================================")
         console_print("CONFIG", "SERVER: {0} PORT: {1} SSL: {2}".format(str(server), str(port), str(ssl)))
-        console_print("CONFIG", "NICKNAME: \"{0}\" USERNAME: \"{1}\" REALNAME: \"{2}\"".format(str(nick_name), str(user_name), str(real_name)))
+        console_print("CONFIG",
+                      "NICKNAME: \"{0}\" USERNAME: \"{1}\" REALNAME: \"{2}\"".format(str(nick_name), str(user_name),
+                                                                                     str(real_name)))
         console_print("CONFIG", "PASSWORD: {0}".format(str(password)))
         console_print("INIT", "")
 
@@ -205,20 +436,21 @@ class IRCBot(object):
             that send information about the client to the server.
         """
         # Creates the socket and set an appropriate timeout
-        self.ircConnection = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-        self.ircConnection.settimeout(timeout)
+        self.irc_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        self.irc_socket.settimeout(timeout)
         console_print("CONNECT", "Socket Created.")
 
         # Loop until we are connected
         for i in range(1, connection_attempts + 1):
-            console_print("CONNECT", "Attempting to connect...[ Attempt " + str(i) + " of " + str(connection_attempts) + " ]")
+            console_print("CONNECT",
+                          "Attempting to connect...[ Attempt " + str(i) + " of " + str(connection_attempts) + " ]")
             try:
                 # Connects to server
-                self.ircConnection.connect((self.server, self.port))
+                self.irc_socket.connect((self.server, self.port))
                 # if we are told that the client connects with SSL, then we wrap the current socket with SSL in order
                 # to make it SSL
                 if self.ssl:
-                    self.ircConnection = ssl.wrap_socket(self.ircConnection)
+                    self.irc_socket = ssl.wrap_socket(self.irc_socket)
                 console_print("CONNECT", "Connected Successfully.")
                 break
             except IOError:
@@ -228,43 +460,34 @@ class IRCBot(object):
                     raise IOError("Cannot resolve server. Please check if the server and port parameters are correct.")
 
                 console_print("CONNECT", "Connection attempt failed.")
-                time.sleep(3)  # Just stop a few seconds so the connection attempts don't go too fast and it doesnt act like a mini DDoS attack
+                time.sleep(
+                    3)  # Just stop a few seconds so the connection attempts don't go too fast and it doesnt act like a mini DDoS attack
 
         # Sending all initial messages to the server
-        self.ircConnection.send(('USER ' + str(self.user_name) + ' host servname : ' + str(self.real_name) + '\r\n').encode())
-        self.ircConnection.send(('NICK ' + str(self.nick_name) + '\r\n').encode())
+        self.irc_socket.send(
+            ('USER ' + str(self.user_name) + ' host servname : ' + str(self.real_name) + '\r\n').encode())
+        self.irc_socket.send(('NICK ' + str(self.nick_name) + '\r\n').encode())
 
         if self.password is None:
-            self.ircConnection.send(('NS IDENTIFY ' + str(self.password) + '\r\n').encode())
-            self.ircConnection.send('HS ON\r\n'.encode())
+            self.irc_socket.send(('NS IDENTIFY ' + str(self.password) + '\r\n').encode())
+            self.irc_socket.send('HS ON\r\n'.encode())
         # once, we have connected, we execute the on_connected method and tell the bot that the connect is active
         self.is_connect = True
         self.on_connected()
 
     def on_connected(self):
-        for module_name in self.loaded_modules:
-            if hasattr(sys.modules[module_name], 'on_init'):
-                if callable(getattr(sys.modules[module_name], 'on_init')):
-                    sys.modules[module_name].on_init(self)
-
         threading.Thread(target=self._receive_incoming_data).start()
         threading.Thread(target=self.on_constant_module_call).start()
 
     def on_constant_module_call(self):
         while self.is_connect:
             time.sleep(1)
-            for module_name in self.loaded_modules:
-                if hasattr(sys.modules[module_name], 'on_constant_call') and callable(getattr(sys.modules[module_name], 'on_constant_call')):
-                    try:
-                        sys.modules[module_name].on_constant_call(self)
-                    except Exception as error:
-                        console_print("MODULE-ERROR", "MODULE: " + str(module_name) + " | INPUT: Constant Call | ERROR MESSAGE: " + str(error))
-                        self.unload_module(module_name)
+            self.irc_modules.on_process_forever()
 
     def _receive_incoming_data(self):
         while self.is_connect:
             try:
-                raw_data = self.ircConnection.recv(1024)
+                raw_data = self.irc_socket.recv(1024)
             except IOError:
                 self.quit(error_message="socket timeout")
                 break
@@ -492,194 +715,141 @@ class IRCBot(object):
                     mode_params.remove(mode_params[0])
 
     def call_modules(self, event_type, parsed_data):
-        for module_name in self.loaded_modules:
-            try:
-                if event_type == "RAW-NUMERIC":
-                    mask = parsed_data[0]
-                    numeric = parsed_data[1]
-                    message = parsed_data[3]
-                    if hasattr(sys.modules[module_name], 'on_raw_numeric'):
-                        if callable(getattr(sys.modules[module_name], 'on_raw_numeric')):
-                            sys.modules[module_name].on_raw_numeric(self, mask, numeric, message)
+        try:
+            if event_type == "RAW-NUMERIC":
+                mask = parsed_data[0]
+                numeric = parsed_data[1]
+                target = parsed_data[2]
+                message = parsed_data[3]
+                self.irc_modules.on_raw_numeric(mask, numeric, target, message)
 
-                elif event_type == "NICK-CHANGE":
-                    user_mask = [parsed_data[0], parsed_data[1], parsed_data[2]]
-                    user_old_nick = parsed_data[0]
-                    user_new_nick = parsed_data[1]
-                    if hasattr(sys.modules[module_name], 'on_nick_change'):
-                        if callable(getattr(sys.modules[module_name], 'on_nick_change')):
-                            sys.modules[module_name].on_nick_change(self, user_mask, user_old_nick, user_new_nick)
+            elif event_type == "NICK-CHANGE":
+                user_mask = [parsed_data[0], parsed_data[1], parsed_data[2]]
+                user_old_nick = parsed_data[0]
+                user_new_nick = parsed_data[1]
+                self.irc_modules.on_nick_change(user_mask, user_old_nick, user_new_nick)
 
-                elif event_type == "ACTION":
-                    user_nick = parsed_data[0]
-                    user_mask = [parsed_data[0], parsed_data[1], parsed_data[2]]
-                    channel = parsed_data[3]
-                    action = parsed_data[4]
-                    if hasattr(sys.modules[module_name], 'on_action'):
-                        if callable(getattr(sys.modules[module_name], 'on_action')):
-                            sys.modules[module_name].on_action(self, user_mask, user_nick, channel, action)
+            elif event_type == "ACTION":
+                user_nick = parsed_data[0]
+                user_mask = [parsed_data[0], parsed_data[1], parsed_data[2]]
+                channel = parsed_data[3]
+                action = parsed_data[4]
+                self.irc_modules.on_action(user_mask, user_nick, channel, action)
 
-                elif event_type == "CHANNEL-PM":
-                    user_nick = parsed_data[0]
-                    user_mask = [parsed_data[0], parsed_data[1], parsed_data[2]]
-                    channel = parsed_data[3]
-                    message = parsed_data[4]
-                    if hasattr(sys.modules[module_name], 'on_channel_pm'):
-                        if callable(getattr(sys.modules[module_name], 'on_channel_pm')):
-                            sys.modules[module_name].on_channel_pm(self, user_mask, user_nick, channel, message)
+            elif event_type == "CHANNEL-PM":
+                user_nick = parsed_data[0]
+                user_mask = [parsed_data[0], parsed_data[1], parsed_data[2]]
+                channel = parsed_data[3]
+                message = parsed_data[4]
+                self.irc_modules.on_channel_pm(user_mask, user_nick, channel, message)
 
-                elif event_type == "CTCP":
-                    user_nick = parsed_data[0]
-                    user_mask = [parsed_data[0], parsed_data[1], parsed_data[2]]
-                    target = parsed_data[3]
-                    ctcp_params = parsed_data[4].split()
-                    ctcp_command = ctcp_params[0]
-                    if len(ctcp_params) > 1:
-                        ctcp_params = ctcp_params.pop(0)
-                    else:
-                        ctcp_params = list()
+            elif event_type == "CTCP":
+                user_nick = parsed_data[0]
+                user_mask = [parsed_data[0], parsed_data[1], parsed_data[2]]
+                target = parsed_data[3]
+                ctcp_params = parsed_data[4].split()
+                ctcp_command = ctcp_params[0]
+                if len(ctcp_params) > 1:
+                    ctcp_params = ctcp_params.pop(0)
+                else:
+                    ctcp_params = list()
+                self.irc_modules.on_ctcp(user_mask, user_nick, target, ctcp_command, ctcp_params)
 
-                    if hasattr(sys.modules[module_name], 'on_ctcp'):
-                        if callable(getattr(sys.modules[module_name], 'on_ctcp')):
-                            sys.modules[module_name].on_ctcp(self, user_mask, user_nick, target, ctcp_command,ctcp_params)
+            elif event_type == "USER-PM":
+                user_nick = parsed_data[0]
+                user_mask = [parsed_data[0], parsed_data[1], parsed_data[2]]
+                target = parsed_data[3]
+                message = parsed_data[4]
+                self.irc_modules.on_user_pm(user_mask, user_nick, target, message)
 
-                elif event_type == "USER-PM":
-                    user_nick = parsed_data[0]
-                    user_mask = [parsed_data[0], parsed_data[1], parsed_data[2]]
-                    target = parsed_data[3]
-                    message = parsed_data[4]
-                    if hasattr(sys.modules[module_name], 'on_user_pm'):
-                        if callable(getattr(sys.modules[module_name], 'on_user_pm')):
-                            sys.modules[module_name].on_user_pm(self, user_mask, user_nick, target, message)
+            elif event_type == "KICK":
+                user_nick = parsed_data[0]
+                user_mask = [parsed_data[0], parsed_data[1], parsed_data[2]]
+                channel = parsed_data[3]
+                target = parsed_data[4]
+                message = parsed_data[5]
+                self.irc_modules.on_kick(user_mask, user_nick, channel, target, message)
 
-                elif event_type == "KICK":
-                    user_nick = parsed_data[0]
-                    user_mask = [parsed_data[0], parsed_data[1], parsed_data[2]]
-                    channel = parsed_data[3]
-                    target = parsed_data[4]
-                    message = parsed_data[5]
-                    if hasattr(sys.modules[module_name], 'on_kick'):
-                        if callable(getattr(sys.modules[module_name], 'on_kick')):
-                            sys.modules[module_name].on_kick(self, user_mask, user_nick, channel, target, message)
+            elif event_type == "INVITE":
+                user_nick = parsed_data[0]
+                user_mask = [parsed_data[0], parsed_data[1], parsed_data[2]]
+                target = parsed_data[3]
+                channel = parsed_data[4]
+                self.irc_modules.on_invite(user_mask, user_nick, target, channel)
 
-                elif event_type == "INVITE":
-                    user_nick = parsed_data[0]
-                    user_mask = [parsed_data[0], parsed_data[1], parsed_data[2]]
-                    target = parsed_data[3]
-                    channel = parsed_data[4]
-                    if hasattr(sys.modules[module_name], 'on_invite'):
-                        if callable(getattr(sys.modules[module_name], 'on_invite')):
-                            sys.modules[module_name].on_invite(self, user_mask, user_nick, target, channel)
+            elif event_type == "JOIN":
+                user_nick = parsed_data[0]
+                user_mask = [parsed_data[0], parsed_data[1], parsed_data[2]]
+                channel = parsed_data[3]
+                self.irc_modules.on_join(user_mask, user_nick, channel)
 
-                elif event_type == "JOIN":
-                    user_nick = parsed_data[0]
-                    user_mask = [parsed_data[0], parsed_data[1], parsed_data[2]]
-                    channel = parsed_data[3]
-                    if hasattr(sys.modules[module_name], 'on_join'):
-                        if callable(getattr(sys.modules[module_name], 'on_join')):
-                            sys.modules[module_name].on_join(self, user_mask, user_nick, channel)
+            elif event_type == "PART":
+                user_nick = parsed_data[0]
+                user_mask = [parsed_data[0], parsed_data[1], parsed_data[2]]
+                channel = parsed_data[3]
+                part_message = parsed_data[4]
+                self.irc_modules.on_part(user_mask, user_nick, channel, part_message)
 
-                elif event_type == "PART":
-                    user_nick = parsed_data[0]
-                    user_mask = [parsed_data[0], parsed_data[1], parsed_data[2]]
-                    channel = parsed_data[3]
-                    part_message = parsed_data[4]
-                    if hasattr(sys.modules[module_name], 'on_part'):
-                        if callable(getattr(sys.modules[module_name], 'on_part')):
-                            sys.modules[module_name].on_part(self, user_mask, user_nick, channel, part_message)
+            elif event_type == "QUIT":
+                user_nick = parsed_data[0]
+                user_mask = [parsed_data[0], parsed_data[1], parsed_data[2]]
+                quit_message = parsed_data[3]
+                self.irc_modules.on_quit(user_mask, user_nick, quit_message)
 
-                elif event_type == "QUIT":
-                    user_nick = parsed_data[0]
-                    user_mask = [parsed_data[0], parsed_data[1], parsed_data[2]]
-                    quit_message = parsed_data[3]
-                    if hasattr(sys.modules[module_name], 'on_quit'):
-                        if callable(getattr(sys.modules[module_name], 'on_quit')):
-                            sys.modules[module_name].on_quit(self, user_mask, user_nick, quit_message)
+            elif event_type == "CHANNEL-NOTICE":
+                user_nick = parsed_data[0]
+                user_mask = [parsed_data[0], parsed_data[1], parsed_data[2]]
+                channel = parsed_data[3]
+                message = parsed_data[4]
+                self.irc_modules.on_channel_notice(user_mask, user_nick, channel, message)
 
-                elif event_type == "CHANNEL-NOTICE":
-                    user_nick = parsed_data[0]
-                    user_mask = [parsed_data[0], parsed_data[1], parsed_data[2]]
-                    channel = parsed_data[3]
-                    message = parsed_data[4]
-                    if hasattr(sys.modules[module_name], 'on_channel_notice'):
-                        if callable(getattr(sys.modules[module_name], 'on_channel_notice')):
-                            sys.modules[module_name].on_channel_notice(self, user_mask, user_nick, channel, message)
+            elif event_type == "USER-NOTICE":
+                user_nick = parsed_data[0]
+                user_mask = [parsed_data[0], parsed_data[1], parsed_data[2]]
+                target = parsed_data[3]
+                message = parsed_data[4]
+                self.irc_modules.on_user_notice(user_mask, user_nick, target, message)
 
-                elif event_type == "USER-NOTICE":
-                    user_nick = parsed_data[0]
-                    user_mask = [parsed_data[0], parsed_data[1], parsed_data[2]]
-                    target = parsed_data[3]
-                    message = parsed_data[4]
-                    if hasattr(sys.modules[module_name], 'on_user_notice'):
-                        if callable(getattr(sys.modules[module_name], 'on_user_notice')):
-                            sys.modules[module_name].on_user_notice(self, user_mask, user_nick, target, message)
+            elif event_type == "NOTICE-AUTH":
+                mask = parsed_data[0]
+                message = parsed_data[1]
+                self.irc_modules.on_notice_auth(mask, message)
 
-                elif event_type == "NOTICE-AUTH":
-                    mask = parsed_data[0]
-                    message = parsed_data[1]
-                    if hasattr(sys.modules[module_name], 'on_notice_auth'):
-                        if callable(getattr(sys.modules[module_name], 'on_notice_auth')):
-                            sys.modules[module_name].on_notice_auth(self, mask, message)
+            elif event_type == "PING":
+                ping_reply = parsed_data[0]
+                self.irc_modules.on_ping(ping_reply)
 
-                elif event_type == "PING":
-                    ping_reply = parsed_data[0]
-                    if hasattr(sys.modules[module_name], 'on_ping'):
-                        if callable(getattr(sys.modules[module_name], 'on_ping')):
-                            sys.modules[module_name].on_ping(self, ping_reply)
+            elif event_type == "MODE-USER":
+                user = parsed_data[0]
+                target = parsed_data[1]
+                mode_sting = parsed_data[2]
+                self.irc_modules.on_mode_user(user, target, mode_sting)
 
-                elif event_type == "MODE-USER":
-                    user = parsed_data[0]
-                    target = parsed_data[1]
-                    mode_sting = parsed_data[2]
-                    if hasattr(sys.modules[module_name], 'on_mode_user'):
-                        if callable(getattr(sys.modules[module_name], 'on_mode_user')):
-                            sys.modules[module_name].on_mode_user(self, user, target, mode_sting)
+            elif event_type == "MODE-CHANNEL-SETBYUSER":
+                user_nick = parsed_data[0]
+                user_mask = [parsed_data[0], parsed_data[1], parsed_data[2]]
+                channel = parsed_data[3]
+                mode_sting = parsed_data[4]
+                mode_params = parsed_data[5]
+                self.irc_modules.on_mode_channel_setbyuser(user_mask, user_nick, channel, mode_sting, mode_params)
 
-                elif event_type == "MODE-CHANNEL-SETBYUSER":
-                    user_nick = parsed_data[0]
-                    user_mask = [parsed_data[0], parsed_data[1], parsed_data[2]]
-                    channel = parsed_data[3]
-                    mode_sting = parsed_data[4]
-                    mode_params = parsed_data[5]
-                    if hasattr(sys.modules[module_name], 'on_mode_channel_setbyuser'):
-                        if callable(getattr(sys.modules[module_name], 'on_mode_channel_setbyuser')):
-                            sys.modules[module_name].on_mode_channel_setbyuser(self, user_mask, user_nick, channel, mode_sting, mode_params)
+            elif event_type == "MODE-CHANNEL-SETBYSERV":
+                serv_user = parsed_data[0]
+                channel = parsed_data[1]
+                mode_sting = parsed_data[2]
+                mode_params = parsed_data[3]
+                self.irc_modules.on_mode_channel_setbyserv(serv_user, channel, mode_sting, mode_params)
 
-                elif event_type == "MODE-CHANNEL-SETBYSERV":
-                    serv_user = parsed_data[0]
-                    channel = parsed_data[1]
-                    mode_sting = parsed_data[2]
-                    mode_params = parsed_data[3]
-                    if hasattr(sys.modules[module_name], 'on_mode_channel_setbyserv'):
-                        if callable(getattr(sys.modules[module_name], 'on_mode_channel_setbyserv')):
-                            sys.modules[module_name].on_mode_channel_setbyserv(self, serv_user, channel, mode_sting, mode_params)
+            elif event_type == "ERROR":
+                error_message = parsed_data[0]
+                self.irc_modules.on_error(error_message)
 
-                elif event_type == "ERROR":
-                    error_message = parsed_data[0]
-                    if hasattr(sys.modules[module_name], 'on_error'):
-                        if callable(getattr(sys.modules[module_name], 'on_error')):
-                            sys.modules[module_name].on_error(self, error_message)
-
-            except Exception as error:
-                console_print("MODULE-ERROR",
-                              "MODULE: " + module_name + " INPUT: " + str(parsed_data) + " ERROR MESSAGE: " + str(
-                                  error))
-                self.unload_module(module_name)
-
-        if len(self.loading_modules) > 0:
-            for module_name in self.loading_modules:
-                self.unloaded_modules.discard(module_name)
-                self.loaded_modules.add(module_name)
-                if hasattr(sys.modules[module_name], 'on_init'):
-                    if callable(getattr(sys.modules[module_name], 'on_init')):
-                        sys.modules[module_name].on_init(self)
-            self.loading_modules.clear()
-
-        if len(self.unloading_modules) > 0:
-            for module_name in self.unloading_modules:
-                self.loaded_modules.discard(module_name)
-                self.unloaded_modules.add(module_name)
-            self.unloading_modules.clear()
+        except Exception as error:
+            pass
+            # console_print("MODULE-ERROR",
+            #               "MODULE: " + module_name + " INPUT: " + str(parsed_data) + " ERROR MESSAGE: " + str(
+            #                   error))
+            # self.irc_modules.unload_module(module_name)
 
     def send_raw_message(self, message):
         """
@@ -687,7 +857,7 @@ class IRCBot(object):
 
             :param message: A Message to the server with IRC string formatting inorder for it to be understood by the server.
         """
-        self.ircConnection.send(bytes(str(message) + '\r\n', 'UTF-8'))
+        self.irc_socket.send(bytes(str(message) + '\r\n', 'UTF-8'))
 
     def send_private_message(self, recipient, message):
         """
@@ -816,7 +986,8 @@ class IRCBot(object):
             console_print("QUIT", "Bot has disconnected successfully.")
 
         elif quit_message and not error_message:
-            self.send_raw_message("QUIT :" + str(quit_message) + " - Python IRC Framework - By Prashant B. (https://github.com/pbombnz)")
+            self.send_raw_message(
+                "QUIT :" + str(quit_message) + " - Python IRC Framework - By Prashant B. (https://github.com/pbombnz)")
             console_print("QUIT", "Bot has disconnected successfully.")
 
         elif not quit_message and error_message:
@@ -824,10 +995,11 @@ class IRCBot(object):
 
         elif quit_message and error_message:
             console_print("QUIT", "Bot has disconnected unexpectedly due to " + str(error_message))
-            self.send_raw_message("QUIT :" + str(quit_message) + " - Python IRC Framework - By Prashant B. (https://github.com/pbombnz)")
+            self.send_raw_message(
+                "QUIT :" + str(quit_message) + " - Python IRC Framework - By Prashant B. (https://github.com/pbombnz)")
 
         # Clean up variables on quit (regardless if it was an expected quit or not)
-        self.ircConnection.close()
+        self.irc_socket.close()
         self.is_connect = False
         self.channel_info.clear()
         self.channel_info_names_list_index = 0
@@ -839,109 +1011,6 @@ class IRCBot(object):
         else:
             input("Press Enter to close console...")
             exit()
-
-    def reload_module(self, module_name: str):
-        """
-            Reloads an individual module that was previously loaded.
-
-            :param module_name: The full-name of the module to be reloaded
-            :return: Returns True if the IRC module was reloaded successfully, otherwise return False.
-        """
-
-        # Firstly, we check if if the module being reloaded is the 'resources' module or an IRC module as they are
-        # the only two types of valid inputs when reloading.
-        if module_name.lower() == "resources":
-            # attempt to reload the resources modules and return True or false depending if was successful or not, respectively.
-            try:
-                importlib.reload(sys.modules["resources"])
-                console_print("MODULE-RELOAD", "Reloaded " + str(module_name) + ".")
-                return True
-            except IOError:
-                console_print("MODULE-RELOAD", "Unable to load " + str(module_name) + ".")
-                return False
-
-        if module_name.startswith("modules."):
-            # Checks if the module's name is even a IRC module
-            if module_name in self.loaded_modules or module_name in self.unloaded_modules:
-                # Knowing its an IRC module, we have to attempt to reload the module
-                try:
-                    importlib.reload(sys.modules[module_name])
-                    # If it was previously an unloaded module, we have to add it to the loaded modules set eventually inorder
-                    # for it to be callable.
-                    if module_name in self.unloaded_modules:
-                        self.loading_modules.add(module_name)
-
-                    # The module is not callable and sucessfully reloaded at this point. Now we have to call the on_init
-                    # method within the module if present
-                    if hasattr(sys.modules[module_name], 'on_init'):
-                        if callable(getattr(sys.modules[module_name], 'on_init')):
-                            sys.modules[module_name].on_init(self)
-
-                    # Print a success message and return True for the success on reloading the module
-                    console_print("MODULE-RELOAD", "Reloaded " + str(module_name) + ".")
-                    return True
-                except IOError:
-                    # A compiler error occured and the module could not be loaded, hence we return False
-                    console_print("MODULE-RELOAD", "Unable to load " + str(module_name) + ".")
-                    return False
-
-        # if the module's name was not the 'resources' module or an IRC module (or simply doesnt exist), then
-        # there is no significance in reloading it hence why we return False
-        return False
-
-    def unload_module(self, module_name: str):
-        """
-            Unloads the specified module from execution of IRC events
-
-            :param module_name: The full name of the module you would like to unload
-            :return: Returns True, if unloading was sucessful otherwise false.
-        """
-
-        if module_name in self.loaded_modules:
-            self.unloading_modules.add(module_name)
-            console_print("MODULE-UNLOAD", "Unloaded " + str(module_name) + ".")
-            return True
-        else:
-            return False  # The module is already (or is going to be) unloaded.
-
-    def reload_all_modules(self):
-        """
-            Reloads all IRC Modules by reloading the 'modules' module which will result in all individual modules
-            being reloaded.
-
-            It's also useful when you want to import a new module into the bot without restarting.
-            Simply add a new import line into the modules' folder's __init__.py and use this method and the new
-            module will be loaded (if there was no compiler errors present)
-
-            :return: bool. True, if all modules were reloaded successfully, otherwise false.
-        """
-        try:
-            importlib.reload(modules)  # Reloading modules
-            # clearing all module sets (except loaded) because all modules are reloaded anyways there is not going to be an unloaded module
-            self.loading_modules.clear()
-            self.unloading_modules.clear()
-            self.unloaded_modules.clear()
-            # Iterate through all system modules, and add all IRC modules to the loading set (to be loaded)
-            # Note, we cannot add straight to the 'loaded_modules' set because it might violate the fact you cannot edit
-            # a data structure that is being iterated through.
-            for module in sys.modules:
-                module_name = sys.modules[module].__name__
-
-                if module_name.startswith("modules"):
-                    self.loading_modules.add(module_name)
-                    console_print("MODULE-RELOAD", "Reloaded " + str(module_name) + ".")
-
-                # Check and execute code within the modules if it needs to perform actions on initialisation
-                if hasattr(sys.modules[module_name], 'on_init'):
-                    if callable(getattr(sys.modules[module_name], 'on_init')):
-                        sys.modules[module_name].on_init(self)
-            # Return true to indicate that all modules were loaded successfully
-            return True
-        except IOError:
-            # Indicates compiler errors in one of the modules, which also means all none of the other modules can be loaded
-            console_print("MODULE-RELOAD", "A specific module is causing all other modules to not be loaded.")
-            # Return False to indicate that all modules were not loaded successfully
-            return False
 
     def get_channel_info(self):
         """
@@ -960,13 +1029,13 @@ class IRCBot(object):
         """
             :return: A frozenset (immutable set) of the loaded modules. You cannot modify the set.
         """
-        return frozenset(self.loaded_modules)
+        return frozenset(self.irc_modules.loaded_modules)
 
     def get_unloaded_modules(self):
         """
             :return: A frozenset (immutable set) of the unloaded modules. You cannot modify the set.
         """
-        return frozenset(self.unloaded_modules)
+        return frozenset(self.irc_modules.unloaded_modules)
 
     def add_attributes(self, **kw):
         """
