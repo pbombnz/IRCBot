@@ -7,10 +7,14 @@ import re
 import random
 from collections import OrderedDict
 
-from irclib.dict import IRCDict
-from irclib.util import console_print
-from irclib.moduleManager import IRCModulesManager
-from irclib.module import IRCModuleException
+from irclib.dict import *
+# noinspection PyUnresolvedReferences
+from irclib.util import *
+from irclib.exceptions import *
+
+# Importing bot modules
+# noinspection PyUnresolvedReferences
+import modules
 
 # Regular expressions of common IRC events
 IRC_EVENT_PATTERN = {'RAW-NUMERIC': ":(.*)\s(\d\d\d)\s(.*)\s:(.*)",
@@ -40,12 +44,6 @@ class IRCBot(object):
         Parsing data recieved from the server so the user of the library doesn't have to implement certain activities
         themselves such as collecting channel data.
     """
-
-    # Importing bot modules
-    # noinspection PyUnresolvedReferences
-    import modules
-    # noinspection PyUnresolvedReferences
-    import resources
 
     # Initialising variables for channel information
     channel_info = IRCDict()
@@ -689,12 +687,6 @@ class IRCBot(object):
                      of that channel's specific information
         """
         return self.channel_info
-
-    def get_resources(self):
-        """
-            :return: returns a 'module' object named resources.
-        """
-        return self.resources
 
     def get_loaded_modules(self):
         """
