@@ -39,7 +39,7 @@ IRC_EVENT_PATTERN = {'RAW-NUMERIC': ":(.*)\s(\d\d\d)\s(.*)\s:(.*)",
                      'ERROR': "ERROR :(.*)"}
 
 
-class Bot(object):
+class IRCBot(object):
     """
         This class handles all the logic of the IRC Bot. This includes handling incoming and outgoing messages.
         Parsing data recieved from the server so the user of the library doesn't have to implement certain activities

@@ -1,4 +1,7 @@
 import sys
+import importlib
+import irclib.bot
+from irclib.general import console_print
 
 
 class IRCModulesManager(object):
@@ -78,8 +81,8 @@ class IRCModulesManager(object):
             :return: bool. True, if all modules were reloaded successfully, otherwise False.
         """
         try:
-            importlib.reload(resources)  # Reloading modules
-            importlib.reload(modules)  # Reloading modules
+            importlib.reload(irclib.bot.resources)  # Reloading modules
+            importlib.reload(irclib.bot.modules)  # Reloading modules
         except IOError:
             # Indicates compiler errors in one of the modules, which also means all none of the other modules can be loaded
             console_print("MODULE-RELOAD",
