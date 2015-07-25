@@ -78,7 +78,6 @@ class IRCBot(object):
 
         # Declaring variables that will hold the module names
         self.irc_modules = IRCModulesManager(self)
-        print(self.irc_modules.loaded_modules)
         # self.loaded_modules = set()
         # self.loading_modules = set()    # Note, that the loading and unloading sets are constructed due to the fact we can not
         # self.unloading_modules = set()  # edit the loaded_modules set when being iterated.
@@ -399,7 +398,7 @@ class IRCBot(object):
             elif event_type == "NICK-CHANGE":
                 user_mask = [parsed_data[0], parsed_data[1], parsed_data[2]]
                 user_old_nick = parsed_data[0]
-                user_new_nick = parsed_data[1]
+                user_new_nick = parsed_data[3]
                 self.irc_modules.on_nick_change(user_mask, user_old_nick, user_new_nick)
 
             elif event_type == "ACTION":

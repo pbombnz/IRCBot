@@ -1,13 +1,12 @@
 import sys
 import importlib
-import irclib.bot
 from irclib.module import IRCModuleException
 from irclib.util import console_print
 
 
 class IRCModulesManager(object):
 
-    def __init__(self, irc_bot: irclib.bot.IRCBot):
+    def __init__(self, irc_bot: object):
         # Declaring variables that will hold the module names
         self.loaded_modules_instance = list()
 
