@@ -8,6 +8,9 @@ import random
 from collections import OrderedDict
 
 from irclib.dict import *
+from irclib.moduleManager import *
+# noinspection PyUnresolvedReferences
+from irclib.module import *
 # noinspection PyUnresolvedReferences
 from irclib.util import *
 from irclib.exceptions import *
