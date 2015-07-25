@@ -63,7 +63,7 @@ def on_join(irc, user_mask, user_nick, channel):
     create_user_account(irc, user_nick)
 
 
-def on_raw_numeric(irc, mask, numeric, message):
+def on_raw_numeric(irc, mask, numeric, target, message):
     if numeric == '353':
         # collecting actually string of nicks
         users_list = message.split()
