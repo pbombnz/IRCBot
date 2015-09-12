@@ -69,7 +69,7 @@ PORN_PHRASE_LIST = ['1 guy 1 jar', '2 girls 1 cup', 'auto erotic', 'baby batter'
                     'spread legs', 'strap on', 'strip club', 'style doggy',
                     'suicide girls', 'sultry women', 'tainted love', 'taste my', 'tea bagging', 'tied up',
                     'tight white', 'tongue in a', 'tub girl',
-                    'two girls one cup', 'urethra play', 'venus mound', 'violet blue', 'violet wand', 'wet dream',
+                    'two girls one cup', 'urethra play', 'venus mound', 'violet wand', 'wet dream',
                     'white power', 'women rapping',
                     'wrapping men', 'wrinkled starfish', 'yellow showers', 'pain olympics']
 
