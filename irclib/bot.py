@@ -84,7 +84,7 @@ class IRCBot(object):
 
         # Displays information about the bot in console
         console_print("INIT", "==============================================================")
-        console_print("INIT", "Python IRC Bot Framework - By Prashant Bhikhu (PBombNZ) [2015]")
+        console_print("INIT", "Python IRC Bot Framework - By PBombNZ")
         console_print("INIT", "==============================================================")
         console_print("CONFIG", "SERVER: {0} PORT: {1} SSL: {2}".format(str(server), str(port), str(is_ssl)))
         console_print("CONFIG",
