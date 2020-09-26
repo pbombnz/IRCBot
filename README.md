@@ -1,5 +1,5 @@
-# Python IRC Bot Modular Framework 
-Prashant Bhikhu (PBombNZ) 2015
+# Python IRC Bot Modular Framework
+
 ## Summary
 This is a Python IRC Bot Modular Event-Driven Framework. Unlike other python IRC bots currently available, this is written with standard libraries only; there is not underlying frameworks such as twisted or asyncchat involved. It establishes a asynchronous chat with the server. It already comes with a few irc modules that provides various functionality to users. Additionally, the modular design of the framework allows modules to be easily created and to be loaded into the bot without restarting.
 
